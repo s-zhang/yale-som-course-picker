@@ -121,6 +121,7 @@ const processCourseData = (course: any): Course => {
 
   return {
     ...course,
+    courseSession: course.courseSession?.trim() || course.courseSession,
     courseCategories: categories,
     instructors: instructors,
   }
