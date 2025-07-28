@@ -7,9 +7,15 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
-import { Plus, Download, Calendar, List, Search } from "lucide-react"
+import { Plus, Download, Calendar, List, Search, ChevronDown, X } from "lucide-react"
 import { toast } from "@/hooks/use-toast"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Checkbox } from "@/components/ui/checkbox"
+
+interface Instructor {
+  name: string
+  email: string
+}
 
 interface Course {
   courseID: string
@@ -18,6 +24,8 @@ interface Course {
   courseDescription: string
   faculty1: string
   faculty2?: string
+  faculty1Email: string
+  faculty2Email?: string
   daysTimes: string
   day: string
   startTime: string
@@ -32,6 +40,7 @@ interface Course {
   courseCategory2?: string
   courseCategory3?: string
   courseCategories: string[]
+  instructors: Instructor[]
 }
 
 interface ScheduledCourse extends Course {
@@ -86,18 +95,97 @@ const TIME_SLOTS = [
   "8:00 PM",
 ]
 
-// Helper function to process course categories
-const processCourseCategories = (course: any): Course => {
+// Helper function to process course categories and instructors
+const processCourseData = (course: any): Course => {
   const categories: string[] = []
+  const instructors: Instructor[] = []
 
+  // Process categories
   if (course.courseCategory) categories.push(course.courseCategory)
   if (course.courseCategory2) categories.push(course.courseCategory2)
   if (course.courseCategory3) categories.push(course.courseCategory3)
 
+  // Process instructors
+  if (course.faculty1 && course.faculty1Email) {
+    instructors.push({
+      name: course.faculty1,
+      email: course.faculty1Email,
+    })
+  }
+  if (course.faculty2 && course.faculty2Email) {
+    instructors.push({
+      name: course.faculty2,
+      email: course.faculty2Email,
+    })
+  }
+
   return {
     ...course,
     courseCategories: categories,
+    instructors: instructors,
   }
+}
+
+// Multi-select filter component
+const MultiSelectFilter = ({
+  options,
+  selected,
+  onSelectionChange,
+  placeholder,
+  label,
+}: {
+  options: string[]
+  selected: string[]
+  onSelectionChange: (selected: string[]) => void
+  placeholder: string
+  label: string
+}) => {
+  const handleToggle = (option: string) => {
+    if (selected.includes(option)) {
+      onSelectionChange(selected.filter((item) => item !== option))
+    } else {
+      onSelectionChange([...selected, option])
+    }
+  }
+
+  const clearAll = () => {
+    onSelectionChange([])
+  }
+
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <Button variant="outline" className="w-48 justify-between text-left font-normal bg-transparent">
+          <span className="truncate">
+            {selected.length === 0 ? placeholder : selected.length === 1 ? selected[0] : `${selected.length} selected`}
+          </span>
+          <ChevronDown className="ml-2 h-4 w-4 shrink-0" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-64 p-0" align="start">
+        <div className="p-3 border-b">
+          <div className="flex items-center justify-between">
+            <span className="font-medium text-sm">{label}</span>
+            {selected.length > 0 && (
+              <Button variant="ghost" size="sm" onClick={clearAll} className="h-6 px-2 text-xs">
+                Clear
+              </Button>
+            )}
+          </div>
+        </div>
+        <div className="max-h-64 overflow-y-auto">
+          {options.map((option) => (
+            <div key={option} className="flex items-center space-x-2 px-3 py-2 hover:bg-gray-50">
+              <Checkbox id={option} checked={selected.includes(option)} onCheckedChange={() => handleToggle(option)} />
+              <label htmlFor={option} className="text-sm cursor-pointer flex-1 truncate">
+                {option}
+              </label>
+            </div>
+          ))}
+        </div>
+      </PopoverContent>
+    </Popover>
+  )
 }
 
 export default function CourseTable() {
@@ -106,7 +194,9 @@ export default function CourseTable() {
   const [searchTerm, setSearchTerm] = useState("")
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState("list")
-  const [selectedCategory, setSelectedCategory] = useState("all")
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([])
+  const [selectedSessions, setSelectedSessions] = useState<string[]>([])
+  const [selectedInstructors, setSelectedInstructors] = useState<string[]>([])
 
   const categories = React.useMemo(() => {
     const categorySet = new Set<string>()
@@ -118,6 +208,24 @@ export default function CourseTable() {
     return Array.from(categorySet).sort()
   }, [courses])
 
+  const sessions = React.useMemo(() => {
+    const sessionSet = new Set<string>()
+    courses.forEach((course) => {
+      if (course.courseSession) sessionSet.add(course.courseSession)
+    })
+    return Array.from(sessionSet).sort()
+  }, [courses])
+
+  const instructors = React.useMemo(() => {
+    const instructorSet = new Set<string>()
+    courses.forEach((course) => {
+      course.instructors.forEach((instructor) => {
+        if (instructor.name) instructorSet.add(instructor.name)
+      })
+    })
+    return Array.from(instructorSet).sort()
+  }, [courses])
+
   useEffect(() => {
     fetchCourses()
   }, [])
@@ -127,7 +235,7 @@ export default function CourseTable() {
       setLoading(true)
       const response = await fetch("/api/courses")
       const data = await response.json()
-      const processedCourses = (data.courses || []).map(processCourseCategories)
+      const processedCourses = (data.courses || []).map(processCourseData)
       setCourses(processedCourses)
     } catch (error) {
       console.error("Error fetching courses:", error)
@@ -208,8 +316,11 @@ export default function CourseTable() {
     (course) =>
       (course.courseTitle.toLowerCase().includes(searchTerm.toLowerCase()) ||
         course.courseNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        course.faculty1.toLowerCase().includes(searchTerm.toLowerCase())) &&
-      (selectedCategory === "all" || course.courseCategories.includes(selectedCategory)),
+        course.instructors.some((instructor) => instructor.name.toLowerCase().includes(searchTerm.toLowerCase()))) &&
+      (selectedCategories.length === 0 || course.courseCategories.some((cat) => selectedCategories.includes(cat))) &&
+      (selectedSessions.length === 0 || selectedSessions.includes(course.courseSession)) &&
+      (selectedInstructors.length === 0 ||
+        course.instructors.some((instructor) => selectedInstructors.includes(instructor.name))),
   )
 
   const getTimePosition = (time: string) => {
@@ -230,6 +341,19 @@ export default function CourseTable() {
     return end - start
   }
 
+  const clearAllFilters = () => {
+    setSelectedCategories([])
+    setSelectedSessions([])
+    setSelectedInstructors([])
+    setSearchTerm("")
+  }
+
+  const hasActiveFilters =
+    selectedCategories.length > 0 ||
+    selectedSessions.length > 0 ||
+    selectedInstructors.length > 0 ||
+    searchTerm.length > 0
+
   const renderCourseCard = (course: Course | ScheduledCourse, isScheduled = false) => (
     <Card key={course.courseID} className="hover:shadow-md transition-shadow">
       <CardContent className="p-4">
@@ -245,12 +369,25 @@ export default function CourseTable() {
                   </Badge>
                 ))}
                 <Badge variant="secondary">{course.units} units</Badge>
+                <Badge variant="outline">{course.courseSession}</Badge>
               </div>
               <h4 className="font-medium text-gray-900 mb-2">{course.courseTitle}</h4>
               <p className="text-sm text-gray-600 mb-3 line-clamp-2">{course.courseDescription}</p>
-              <div className="flex items-center space-x-4 text-sm text-gray-500">
-                <span>{course.faculty1}</span>
-                {course.faculty2 && <span>• {course.faculty2}</span>}
+              <div className="flex items-center space-x-4 text-sm text-gray-500 flex-wrap">
+                <div className="flex items-center space-x-1">
+                  {course.instructors.map((instructor, index) => (
+                    <React.Fragment key={index}>
+                      <a
+                        href={`mailto:${instructor.email}`}
+                        className="text-gray-500 hover:text-gray-700 underline"
+                        title={`Email ${instructor.name}`}
+                      >
+                        {instructor.name}
+                      </a>
+                      {index < course.instructors.length - 1 && <span> • </span>}
+                    </React.Fragment>
+                  ))}
+                </div>
                 <span>• {course.daysTimes}</span>
                 <span>• {course.room}</span>
                 {!isScheduled && <span>• Limit: {course.enrollmentLimit}</span>}
@@ -394,22 +531,36 @@ export default function CourseTable() {
         <div className="border-t pt-8">
           <div className="mb-6">
             <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center space-x-4">
-                <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                  <SelectTrigger className="w-64">
-                    <SelectValue placeholder="Filter by Category" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Categories</SelectItem>
-                    {categories.map((category) => (
-                      <SelectItem key={category} value={category}>
-                        {category}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+              <div className="flex items-center space-x-3 flex-wrap gap-y-2">
+                <MultiSelectFilter
+                  options={categories}
+                  selected={selectedCategories}
+                  onSelectionChange={setSelectedCategories}
+                  placeholder="Categories"
+                  label="Categories"
+                />
+                <MultiSelectFilter
+                  options={sessions}
+                  selected={selectedSessions}
+                  onSelectionChange={setSelectedSessions}
+                  placeholder="Sessions"
+                  label="Sessions"
+                />
+                <MultiSelectFilter
+                  options={instructors}
+                  selected={selectedInstructors}
+                  onSelectionChange={setSelectedInstructors}
+                  placeholder="Instructors"
+                  label="Instructors"
+                />
+                {hasActiveFilters && (
+                  <Button variant="ghost" size="sm" onClick={clearAllFilters} className="text-gray-500">
+                    <X className="w-4 h-4 mr-1" />
+                    Clear All
+                  </Button>
+                )}
               </div>
-              <div className="relative w-96">
+              <div className="relative w-80">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                 <Input
                   placeholder="Search courses, professors, or course codes..."
