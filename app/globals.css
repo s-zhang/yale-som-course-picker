@@ -2,6 +2,12 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer base {
+  :root {
+    --font-sans: var(--font-inter), system-ui, sans-serif;
+  }
+}
+
 @layer utilities {
   .text-balance {
     text-wrap: balance;
@@ -86,5 +92,6 @@
   }
   body {
     @apply bg-background text-foreground;
+    font-family: var(--font-sans), system-ui, sans-serif;
   }
 }
