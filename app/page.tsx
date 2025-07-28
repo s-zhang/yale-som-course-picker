@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import React from "react"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Input } from "@/components/ui/input"
@@ -8,6 +9,7 @@ import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
 import { Plus, Download, Calendar, List, Search } from "lucide-react"
 import { toast } from "@/hooks/use-toast"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 interface Course {
   courseID: string
@@ -27,6 +29,9 @@ interface Course {
   enrollmentLimit: string
   courseSessionStartDate: string
   courseSessionEndDate: string
+  courseCategory2?: string
+  courseCategory3?: string
+  courseCategories: string[]
 }
 
 interface ScheduledCourse extends Course {
@@ -81,12 +86,37 @@ const TIME_SLOTS = [
   "8:00 PM",
 ]
 
+// Helper function to process course categories
+const processCourseCategories = (course: any): Course => {
+  const categories: string[] = []
+
+  if (course.courseCategory) categories.push(course.courseCategory)
+  if (course.courseCategory2) categories.push(course.courseCategory2)
+  if (course.courseCategory3) categories.push(course.courseCategory3)
+
+  return {
+    ...course,
+    courseCategories: categories,
+  }
+}
+
 export default function CourseTable() {
   const [courses, setCourses] = useState<Course[]>([])
   const [scheduledCourses, setScheduledCourses] = useState<ScheduledCourse[]>([])
   const [searchTerm, setSearchTerm] = useState("")
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState("list")
+  const [selectedCategory, setSelectedCategory] = useState("all")
+
+  const categories = React.useMemo(() => {
+    const categorySet = new Set<string>()
+    courses.forEach((course) => {
+      course.courseCategories.forEach((category) => {
+        if (category) categorySet.add(category)
+      })
+    })
+    return Array.from(categorySet).sort()
+  }, [courses])
 
   useEffect(() => {
     fetchCourses()
@@ -97,7 +127,8 @@ export default function CourseTable() {
       setLoading(true)
       const response = await fetch("/api/courses")
       const data = await response.json()
-      setCourses(data.courses || [])
+      const processedCourses = (data.courses || []).map(processCourseCategories)
+      setCourses(processedCourses)
     } catch (error) {
       console.error("Error fetching courses:", error)
       toast({
@@ -175,9 +206,10 @@ export default function CourseTable() {
 
   const filteredCourses = courses.filter(
     (course) =>
-      course.courseTitle.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      course.courseNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      course.faculty1.toLowerCase().includes(searchTerm.toLowerCase()),
+      (course.courseTitle.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        course.courseNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        course.faculty1.toLowerCase().includes(searchTerm.toLowerCase())) &&
+      (selectedCategory === "all" || course.courseCategories.includes(selectedCategory)),
   )
 
   const getTimePosition = (time: string) => {
@@ -197,6 +229,52 @@ export default function CourseTable() {
     const end = getTimePosition(endTime)
     return end - start
   }
+
+  const renderCourseCard = (course: Course | ScheduledCourse, isScheduled = false) => (
+    <Card key={course.courseID} className="hover:shadow-md transition-shadow">
+      <CardContent className="p-4">
+        <div className="flex items-start justify-between">
+          <div className="flex items-start space-x-3 flex-1">
+            {isScheduled && <div className={`w-4 h-4 rounded mt-1 ${(course as ScheduledCourse).color}`}></div>}
+            <div className="flex-1">
+              <div className="flex items-center space-x-3 mb-2 flex-wrap">
+                <h3 className="font-semibold text-lg">{course.courseNumber}</h3>
+                {course.courseCategories.map((category, index) => (
+                  <Badge key={index} variant="outline">
+                    {category}
+                  </Badge>
+                ))}
+                <Badge variant="secondary">{course.units} units</Badge>
+              </div>
+              <h4 className="font-medium text-gray-900 mb-2">{course.courseTitle}</h4>
+              <p className="text-sm text-gray-600 mb-3 line-clamp-2">{course.courseDescription}</p>
+              <div className="flex items-center space-x-4 text-sm text-gray-500">
+                <span>{course.faculty1}</span>
+                {course.faculty2 && <span>• {course.faculty2}</span>}
+                <span>• {course.daysTimes}</span>
+                <span>• {course.room}</span>
+                {!isScheduled && <span>• Limit: {course.enrollmentLimit}</span>}
+              </div>
+            </div>
+          </div>
+          {isScheduled ? (
+            <Button onClick={() => removeFromSchedule(course.courseID)} variant="outline" size="sm" className="ml-4">
+              Remove
+            </Button>
+          ) : (
+            <Button
+              onClick={() => addToSchedule(course)}
+              size="sm"
+              className="ml-4"
+              disabled={scheduledCourses.some((c) => c.courseID === course.courseID)}
+            >
+              <Plus className="w-4 h-4" />
+            </Button>
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  )
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -257,42 +335,7 @@ export default function CourseTable() {
                   <p>No courses selected yet. Add courses from the list below.</p>
                 </Card>
               ) : (
-                <div className="space-y-2">
-                  {scheduledCourses.map((course) => (
-                    <Card key={course.courseID} className="hover:shadow-md transition-shadow">
-                      <CardContent className="p-4">
-                        <div className="flex items-start justify-between">
-                          <div className="flex items-start space-x-3 flex-1">
-                            <div className={`w-4 h-4 rounded mt-1 ${course.color}`}></div>
-                            <div className="flex-1">
-                              <div className="flex items-center space-x-3 mb-2">
-                                <h3 className="font-semibold text-lg">{course.courseNumber}</h3>
-                                <Badge variant="outline">{course.courseCategory}</Badge>
-                                <Badge variant="secondary">{course.units} units</Badge>
-                              </div>
-                              <h4 className="font-medium text-gray-900 mb-2">{course.courseTitle}</h4>
-                              <p className="text-sm text-gray-600 mb-3 line-clamp-2">{course.courseDescription}</p>
-                              <div className="flex items-center space-x-4 text-sm text-gray-500">
-                                <span>{course.faculty1}</span>
-                                {course.faculty2 && <span>• {course.faculty2}</span>}
-                                <span>• {course.daysTimes}</span>
-                                <span>• {course.room}</span>
-                              </div>
-                            </div>
-                          </div>
-                          <Button
-                            onClick={() => removeFromSchedule(course.courseID)}
-                            variant="outline"
-                            size="sm"
-                            className="ml-4"
-                          >
-                            Remove
-                          </Button>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
+                <div className="space-y-2">{scheduledCourses.map((course) => renderCourseCard(course, true))}</div>
               )}
             </TabsContent>
 
@@ -356,16 +399,32 @@ export default function CourseTable() {
 
         {/* Available Courses Section - Bottom */}
         <div className="border-t pt-8">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-semibold">Available Courses</h2>
-            <div className="relative w-96">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-              <Input
-                placeholder="Search courses, professors, or course codes..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
+          <div className="mb-6">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center space-x-4">
+                <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                  <SelectTrigger className="w-64">
+                    <SelectValue placeholder="Filter by Category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Categories</SelectItem>
+                    {categories.map((category) => (
+                      <SelectItem key={category} value={category}>
+                        {category}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="relative w-96">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <Input
+                  placeholder="Search courses, professors, or course codes..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
             </div>
           </div>
 
@@ -373,38 +432,7 @@ export default function CourseTable() {
             <div className="text-center py-8">Loading courses...</div>
           ) : (
             <div className="space-y-2 max-h-96 overflow-y-auto">
-              {filteredCourses.map((course) => (
-                <Card key={course.courseID} className="hover:shadow-md transition-shadow">
-                  <CardContent className="p-4">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center space-x-3 mb-2">
-                          <h3 className="font-semibold text-lg">{course.courseNumber}</h3>
-                          <Badge variant="outline">{course.courseCategory}</Badge>
-                          <Badge variant="secondary">{course.units} units</Badge>
-                        </div>
-                        <h4 className="font-medium text-gray-900 mb-2">{course.courseTitle}</h4>
-                        <p className="text-sm text-gray-600 mb-3 line-clamp-2">{course.courseDescription}</p>
-                        <div className="flex items-center space-x-4 text-sm text-gray-500">
-                          <span>{course.faculty1}</span>
-                          {course.faculty2 && <span>• {course.faculty2}</span>}
-                          <span>• {course.daysTimes}</span>
-                          <span>• {course.room}</span>
-                          <span>• Limit: {course.enrollmentLimit}</span>
-                        </div>
-                      </div>
-                      <Button
-                        onClick={() => addToSchedule(course)}
-                        size="sm"
-                        className="ml-4"
-                        disabled={scheduledCourses.some((c) => c.courseID === course.courseID)}
-                      >
-                        <Plus className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+              {filteredCourses.map((course) => renderCourseCard(course, false))}
               {filteredCourses.length === 0 && !loading && (
                 <Card className="p-8 text-center text-gray-500">
                   <p>No courses found matching your search.</p>
