@@ -41,6 +41,7 @@ interface Course {
   courseCategory3?: string
   courseCategories: string[]
   instructors: Instructor[]
+  meetingDays: string[]
 }
 
 interface ScheduledCourse extends Course {
@@ -63,7 +64,7 @@ const DAY_MAP: { [key: string]: string } = {
   M: "Monday",
   T: "Tuesday",
   W: "Wednesday",
-  R: "Thursday",
+  Th: "Thursday",
   F: "Friday",
 }
 
@@ -95,6 +96,41 @@ const TIME_SLOTS = [
   "8:00 PM",
 ]
 
+// Helper function to parse meeting days from daysTimes field
+const parseMeetingDays = (daysTimes: string): string[] => {
+  if (!daysTimes) return []
+
+  // Extract the days part (everything before the time)
+  const timePattern = /\d{1,2}:\d{2}\s*(AM|PM)/i
+  const timeMatch = daysTimes.match(timePattern)
+
+  if (!timeMatch) return []
+
+  const daysString = daysTimes.substring(0, timeMatch.index).trim()
+  const meetingDays: string[] = []
+
+  // Parse individual days, handling "Th" as a special case
+  let i = 0
+  while (i < daysString.length) {
+    const char = daysString[i]
+
+    if (char === "T" && i + 1 < daysString.length && daysString[i + 1] === "h") {
+      // Handle "Th" for Thursday
+      meetingDays.push("Thursday")
+      i += 2
+    } else if (DAY_MAP[char]) {
+      // Handle single character days
+      meetingDays.push(DAY_MAP[char])
+      i += 1
+    } else {
+      // Skip spaces and other characters
+      i += 1
+    }
+  }
+
+  return meetingDays
+}
+
 // Helper function to process course categories and instructors
 const processCourseData = (course: any): Course => {
   const categories: string[] = []
@@ -119,11 +155,15 @@ const processCourseData = (course: any): Course => {
     })
   }
 
+  // Parse meeting days from daysTimes
+  const meetingDays = parseMeetingDays(course.daysTimes)
+
   return {
     ...course,
     courseSession: course.courseSession?.trim() || course.courseSession,
     courseCategories: categories,
     instructors: instructors,
+    meetingDays: meetingDays,
   }
 }
 
@@ -198,6 +238,7 @@ export default function CourseTable() {
   const [selectedCategories, setSelectedCategories] = useState<string[]>([])
   const [selectedSessions, setSelectedSessions] = useState<string[]>([])
   const [selectedInstructors, setSelectedInstructors] = useState<string[]>([])
+  const [selectedUnits, setSelectedUnits] = useState<string[]>([])
 
   const categories = React.useMemo(() => {
     const categorySet = new Set<string>()
@@ -225,6 +266,14 @@ export default function CourseTable() {
       })
     })
     return Array.from(instructorSet).sort()
+  }, [courses])
+
+  const units = React.useMemo(() => {
+    const unitSet = new Set<string>()
+    courses.forEach((course) => {
+      if (course.units) unitSet.add(course.units)
+    })
+    return Array.from(unitSet).sort((a, b) => Number.parseFloat(a) - Number.parseFloat(b))
   }, [courses])
 
   useEffect(() => {
@@ -282,7 +331,7 @@ export default function CourseTable() {
     let icsContent = "BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//Yale SOM//Course Schedule//EN\n"
 
     scheduledCourses.forEach((course) => {
-      if (course.day && course.startTime && course.endTime) {
+      if (course.meetingDays.length > 0 && course.startTime && course.endTime) {
         const startDate = new Date(course.courseSessionStartDate.replace(/(\d{4})(\d{2})(\d{2})/, "$1-$2-$3"))
         const endDate = new Date(course.courseSessionEndDate.replace(/(\d{4})(\d{2})(\d{2})/, "$1-$2-$3"))
 
@@ -321,7 +370,8 @@ export default function CourseTable() {
       (selectedCategories.length === 0 || course.courseCategories.some((cat) => selectedCategories.includes(cat))) &&
       (selectedSessions.length === 0 || selectedSessions.includes(course.courseSession)) &&
       (selectedInstructors.length === 0 ||
-        course.instructors.some((instructor) => selectedInstructors.includes(instructor.name))),
+        course.instructors.some((instructor) => selectedInstructors.includes(instructor.name))) &&
+      (selectedUnits.length === 0 || selectedUnits.includes(course.units)),
   )
 
   const getTimePosition = (time: string) => {
@@ -346,6 +396,7 @@ export default function CourseTable() {
     setSelectedCategories([])
     setSelectedSessions([])
     setSelectedInstructors([])
+    setSelectedUnits([])
     setSearchTerm("")
   }
 
@@ -353,6 +404,7 @@ export default function CourseTable() {
     selectedCategories.length > 0 ||
     selectedSessions.length > 0 ||
     selectedInstructors.length > 0 ||
+    selectedUnits.length > 0 ||
     searchTerm.length > 0
 
   const renderCourseCard = (course: Course | ScheduledCourse, isScheduled = false) => (
@@ -502,10 +554,10 @@ export default function CourseTable() {
                         ))}
 
                         {scheduledCourses
-                          .filter((course) => course.day && DAY_MAP[course.day] === day)
+                          .filter((course) => course.meetingDays.includes(day))
                           .map((course) => (
                             <div
-                              key={course.courseID}
+                              key={`${course.courseID}-${day}`}
                               className={`absolute left-1 right-1 ${course.color} text-white text-xs p-2 rounded shadow-sm cursor-pointer hover:shadow-md transition-shadow`}
                               style={{
                                 top: `${getTimePosition(course.startTime)}px`,
@@ -553,6 +605,13 @@ export default function CourseTable() {
                   onSelectionChange={setSelectedInstructors}
                   placeholder="Instructors"
                   label="Instructors"
+                />
+                <MultiSelectFilter
+                  options={units}
+                  selected={selectedUnits}
+                  onSelectionChange={setSelectedUnits}
+                  placeholder="Units"
+                  label="Units"
                 />
                 {hasActiveFilters && (
                   <Button variant="ghost" size="sm" onClick={clearAllFilters} className="text-gray-500">
