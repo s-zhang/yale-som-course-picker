@@ -286,13 +286,6 @@ export default function CourseTable() {
             </h1>
             <Badge variant="secondary">Yale SOM Spring 2026</Badge>
           </div>
-          <div className="flex items-center space-x-4">
-            <Button onClick={exportToICS} variant="outline" size="sm">
-              <Download className="w-4 h-4 mr-2" />
-              Export ICS
-            </Button>
-            <div className="text-sm text-gray-600">{scheduledCourses.length} courses selected</div>
-          </div>
         </div>
       </header>
 
