@@ -105,6 +105,10 @@ const TIME_SLOTS = [
   "7:00 PM",
   "7:30 PM",
   "8:00 PM",
+  "8:30 PM",
+  "9:00 PM",
+  "9:30 PM",
+  "10:00 PM",
 ]
 
 // Helper function to parse meeting days from daysTimes field
@@ -730,7 +734,7 @@ export default function CourseTable() {
 
                   <div className="grid grid-cols-6 relative" style={{ minHeight: "400px" }}>
                     <div className="border-r bg-gray-50">
-                      {TIME_SLOTS.slice(0, 16).map((time) => (
+                      {TIME_SLOTS.map((time) => (
                         <div key={time} className="h-10 border-b text-xs text-gray-500 px-2 py-1">
                           {time}
                         </div>
@@ -739,7 +743,7 @@ export default function CourseTable() {
 
                     {DAYS.map((day) => (
                       <div key={day} className="border-r last:border-r-0 relative">
-                        {TIME_SLOTS.slice(0, 16).map((time) => (
+                        {TIME_SLOTS.map((time) => (
                           <div key={time} className="h-10 border-b border-gray-100"></div>
                         ))}
 
