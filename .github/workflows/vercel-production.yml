@@ -19,6 +19,7 @@ jobs:
           node-version: 20
           cache: 'pnpm'
       - run: pnpm install
+      - run: npx vercel pull --yes --environment=production --token ${{ secrets.VERCEL_TOKEN }}
       - run: pnpm build
       - run: npx vercel build --token ${{ secrets.VERCEL_TOKEN }}
       - uses: amondnet/vercel-action@v25
