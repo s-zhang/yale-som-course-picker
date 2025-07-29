@@ -53,6 +53,8 @@ interface Course {
   instructors: Instructor[]
   meetingDays: string[]
   programCohorts: ProgramCohort[]
+  syllabusUrl?: string
+  oldSyllabusUrl?: string
 }
 
 interface ScheduledCourse extends Course {
@@ -247,6 +249,8 @@ const processCourseData = (course: any): Course => {
     instructors: instructors,
     meetingDays: meetingDays,
     programCohorts: programCohorts,
+    syllabusUrl: course.syllabus, // Assuming API provides 'syllabus'
+    oldSyllabusUrl: course.oldSyllabus, // Assuming API provides 'oldSyllabus'
   }
 }
 
@@ -457,6 +461,8 @@ export default function CourseTable() {
   const [selectedInstructors, setSelectedInstructors] = useState<string[]>([])
   const [selectedUnits, setSelectedUnits] = useState<string[]>([])
   const [selectedProgramCohorts, setSelectedProgramCohorts] = useState<string[]>(["Elective"])
+  // In the CourseTable component, add a new state to track expanded descriptions
+  const [expandedDescriptions, setExpandedDescriptions] = useState(new Set<string>())
 
   const categories = React.useMemo(() => {
     const categorySet = new Set<string>()
@@ -686,69 +692,141 @@ export default function CourseTable() {
     selectedProgramCohorts.length > 0 ||
     searchTerm.length > 0
 
-  const renderCourseCard = (course: Course | ScheduledCourse, isScheduled = false) => (
-    <Card key={`${course.courseID}-${course.termCode || "unknown"}`} className="hover:shadow-md transition-shadow">
-      <CardContent className="p-4">
-        <div className="flex items-start justify-between">
-          <div className="flex items-start space-x-3 flex-1">
-            {isScheduled && <div className={`w-4 h-4 rounded mt-1 ${(course as ScheduledCourse).color}`}></div>}
-            <div className="flex-1">
-              <div className="flex items-center space-x-3 mb-2 flex-wrap">
-                <h3 className="font-semibold text-lg">{course.courseNumber}</h3>
-                {course.courseCategories.map((category, index) => (
-                  <Badge key={index} variant="outline">
-                    {category}
-                  </Badge>
-                ))}
-                <Badge variant="secondary">{course.units} units</Badge>
-                <Badge variant="outline">{course.courseSession}</Badge>
-                {course.programCohorts.map((pc, index) => (
-                  <Badge key={index} className={getProgramCohortBadgeClass(pc.color)}>
-                    {pc.name}
-                  </Badge>
-                ))}
-              </div>
-              <h4 className="font-medium text-gray-900 mb-2">{course.courseTitle}</h4>
-              <p className="text-sm text-gray-600 mb-3 line-clamp-2">{course.courseDescription}</p>
-              <div className="flex items-center space-x-4 text-sm text-gray-500 flex-wrap">
-                <div className="flex items-center space-x-1">
-                  {course.instructors.map((instructor, index) => (
+  // Add a function to toggle the expanded state
+  const toggleDescription = (courseId: string) => {
+    setExpandedDescriptions((prev) => {
+      const newSet = new Set(prev)
+      if (newSet.has(courseId)) {
+        newSet.delete(courseId)
+      } else {
+        newSet.add(courseId)
+      }
+      return newSet
+    })
+  }
+
+  // In the renderCourseCard function, update the description rendering
+  const renderCourseCard = (course: Course | ScheduledCourse, isScheduled = false) => {
+    const isExpanded = expandedDescriptions.has(course.courseID)
+    const isLongDescription = course.courseDescription && course.courseDescription.length > 150
+    const details: React.ReactNode[] = []
+
+    if (course.instructors && course.instructors.length > 0) {
+      course.instructors.forEach((instructor) => {
+        details.push(
+          <a
+            key={instructor.name}
+            href={`mailto:${instructor.email}`}
+            className="text-gray-500 hover:text-gray-700 underline"
+            title={`Email ${instructor.name}`}
+          >
+            {instructor.name}
+          </a>,
+        )
+      })
+    }
+
+    if (course.daysTimes) {
+      details.push(<span key="daysTimes">{course.daysTimes}</span>)
+    }
+
+    if (course.room) {
+      details.push(<span key="room">{course.room}</span>)
+    }
+
+    if (course.syllabusUrl) {
+      details.push(
+        <a
+          key="syllabus"
+          href={course.syllabusUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-gray-500 hover:text-gray-700 underline"
+        >
+          Syllabus
+        </a>,
+      )
+    }
+
+    if (course.oldSyllabusUrl) {
+      details.push(
+        <a
+          key="old-syllabus"
+          href={course.oldSyllabusUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-gray-500 hover:text-gray-700 underline"
+        >
+          Old syllabus
+        </a>,
+      )
+    }
+
+    return (
+      <Card key={`${course.courseID}-${course.termCode || "unknown"}`} className="hover:shadow-md transition-shadow">
+        <CardContent className="p-4">
+          <div className="flex items-start justify-between">
+            <div className="flex items-start space-x-3 flex-1">
+              {isScheduled && <div className={`w-4 h-4 rounded mt-1 ${(course as ScheduledCourse).color}`}></div>}
+              <div className="flex-1">
+                <div className="flex items-center space-x-3 mb-2 flex-wrap">
+                  <h3 className="font-semibold text-lg">{course.courseNumber}</h3>
+                  {course.courseCategories.map((category, index) => (
+                    <Badge key={index} variant="outline">
+                      {category}
+                    </Badge>
+                  ))}
+                  <Badge variant="secondary">{course.units} units</Badge>
+                  <Badge variant="outline">{course.courseSession}</Badge>
+                  {course.programCohorts.map((pc, index) => (
+                    <Badge key={index} className={getProgramCohortBadgeClass(pc.color)}>
+                      {pc.name}
+                    </Badge>
+                  ))}
+                </div>
+                <h4 className="font-medium text-gray-900 mb-2">{course.courseTitle}</h4>
+                <div className="mb-3">
+                  <p className={`text-sm text-gray-600 ${!isExpanded ? "line-clamp-2" : ""}`}>
+                    {course.courseDescription}
+                  </p>
+                  {isLongDescription && (
+                    <button
+                      onClick={() => toggleDescription(course.courseID)}
+                      className="text-sm text-blue-600 hover:underline mt-1"
+                    >
+                      {isExpanded ? "Show less" : "Show more"}
+                    </button>
+                  )}
+                </div>
+                <div className="flex items-center flex-wrap text-sm text-gray-500">
+                  {details.map((detail, index) => (
                     <React.Fragment key={index}>
-                      <a
-                        href={`mailto:${instructor.email}`}
-                        className="text-gray-500 hover:text-gray-700 underline"
-                        title={`Email ${instructor.name}`}
-                      >
-                        {instructor.name}
-                      </a>
-                      {index < course.instructors.length - 1 && <span> • </span>}
+                      {detail}
+                      {index < details.length - 1 && <span className="mx-2">•</span>}
                     </React.Fragment>
                   ))}
                 </div>
-                <span>• {course.daysTimes}</span>
-                <span>• {course.room}</span>
-                {!isScheduled && <span>• Limit: {course.enrollmentLimit}</span>}
               </div>
             </div>
+            {isScheduled ? (
+              <Button onClick={() => removeFromSchedule(course.courseID)} variant="outline" size="sm" className="ml-4">
+                Remove
+              </Button>
+            ) : (
+              <Button
+                onClick={() => addToSchedule(course)}
+                size="sm"
+                className="ml-4"
+                disabled={scheduledCourses.some((c) => c.courseID === course.courseID)}
+              >
+                <Plus className="w-4 h-4" />
+              </Button>
+            )}
           </div>
-          {isScheduled ? (
-            <Button onClick={() => removeFromSchedule(course.courseID)} variant="outline" size="sm" className="ml-4">
-              Remove
-            </Button>
-          ) : (
-            <Button
-              onClick={() => addToSchedule(course)}
-              size="sm"
-              className="ml-4"
-              disabled={scheduledCourses.some((c) => c.courseID === course.courseID)}
-            >
-              <Plus className="w-4 h-4" />
-            </Button>
-          )}
-        </div>
-      </CardContent>
-    </Card>
-  )
+        </CardContent>
+      </Card>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
