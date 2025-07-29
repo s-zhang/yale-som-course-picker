@@ -155,8 +155,13 @@ const processProgramCohorts = (courseType: string, cohort: string): ProgramCohor
 
   components.forEach((component) => {
     if (component === "elective") {
-      // Skip elective
-      return
+      // Create elective program cohort
+      programCohorts.push({
+        program: "",
+        cohort: "",
+        color: "white",
+        name: "Elective",
+      })
     } else if (component === "core") {
       // Core: program = "MBA", color = lowercase cohort, name = pascal case cohort
       // Skip if cohort is null or undefined
@@ -307,6 +312,90 @@ const MultiSelectFilter = ({
   )
 }
 
+// Searchable instructor filter component
+const InstructorSearchFilter = ({
+  options,
+  selected,
+  onSelectionChange,
+  placeholder,
+  label,
+}: {
+  options: string[]
+  selected: string[]
+  onSelectionChange: (selected: string[]) => void
+  placeholder: string
+  label: string
+}) => {
+  const [searchTerm, setSearchTerm] = useState("")
+  const [isOpen, setIsOpen] = useState(false)
+
+  const filteredOptions = options.filter((option) => option.toLowerCase().includes(searchTerm.toLowerCase()))
+
+  const handleToggle = (option: string) => {
+    if (selected.includes(option)) {
+      onSelectionChange(selected.filter((item) => item !== option))
+    } else {
+      onSelectionChange([...selected, option])
+    }
+  }
+
+  const clearAll = () => {
+    onSelectionChange([])
+  }
+
+  return (
+    <Popover open={isOpen} onOpenChange={setIsOpen}>
+      <PopoverTrigger asChild>
+        <Button variant="outline" className="w-48 justify-between text-left font-normal bg-transparent">
+          <span className="truncate">
+            {selected.length === 0 ? placeholder : selected.length === 1 ? selected[0] : `${selected.length} selected`}
+          </span>
+          <ChevronDown className="ml-2 h-4 w-4 shrink-0" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-64 p-0" align="start">
+        <div className="p-3 border-b">
+          <div className="flex items-center justify-between mb-2">
+            <span className="font-medium text-sm">{label}</span>
+            {selected.length > 0 && (
+              <Button variant="ghost" size="sm" onClick={clearAll} className="h-6 px-2 text-xs">
+                Clear
+              </Button>
+            )}
+          </div>
+          <div className="relative">
+            <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400 w-3 h-3" />
+            <Input
+              placeholder="Search instructors..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-7 h-8 text-xs"
+            />
+          </div>
+        </div>
+        <div className="max-h-64 overflow-y-auto">
+          {filteredOptions.length === 0 ? (
+            <div className="px-3 py-2 text-sm text-gray-500">No instructors found</div>
+          ) : (
+            filteredOptions.map((option) => (
+              <div key={option} className="flex items-center space-x-2 px-3 py-2 hover:bg-gray-50">
+                <Checkbox
+                  id={option}
+                  checked={selected.includes(option)}
+                  onCheckedChange={() => handleToggle(option)}
+                />
+                <label htmlFor={option} className="text-sm cursor-pointer flex-1 truncate">
+                  {option}
+                </label>
+              </div>
+            ))
+          )}
+        </div>
+      </PopoverContent>
+    </Popover>
+  )
+}
+
 // Helper function to get background color class for program cohort
 const getProgramCohortBadgeClass = (color: string): string => {
   if (color.toLowerCase() === "white") {
@@ -367,7 +456,7 @@ export default function CourseTable() {
   const [selectedSessions, setSelectedSessions] = useState<string[]>([])
   const [selectedInstructors, setSelectedInstructors] = useState<string[]>([])
   const [selectedUnits, setSelectedUnits] = useState<string[]>([])
-  const [selectedProgramCohorts, setSelectedProgramCohorts] = useState<string[]>([])
+  const [selectedProgramCohorts, setSelectedProgramCohorts] = useState<string[]>(["Elective"])
 
   const categories = React.useMemo(() => {
     const categorySet = new Set<string>()
@@ -793,7 +882,7 @@ export default function CourseTable() {
                   placeholder="Sessions"
                   label="Sessions"
                 />
-                <MultiSelectFilter
+                <InstructorSearchFilter
                   options={instructors}
                   selected={selectedInstructors}
                   onSelectionChange={setSelectedInstructors}
