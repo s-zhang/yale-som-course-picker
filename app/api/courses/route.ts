@@ -1,25 +1,48 @@
 import { NextResponse } from "next/server"
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    const response = await fetch("https://som.yale.edu/courses/session-items/202601", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        // Add any required parameters for the API call
-      }),
-    })
+    const { searchParams } = new URL(request.url)
+    const semestersParam = searchParams.get("semesters")
 
-    if (!response.ok) {
-      throw new Error("Failed to fetch courses")
+    if (!semestersParam) {
+      return NextResponse.json({ error: "Semester codes are required" }, { status: 400 })
     }
 
-    const data = await response.json()
+    const semesterCodes = semestersParam.split(",")
+    const allCourses: any[] = []
 
+    // Fetch courses from all semester codes
+    for (const semesterCode of semesterCodes) {
+      try {
+        console.log(`Fetching courses for semester: ${semesterCode}`)
+        const response = await fetch(`https://som.yale.edu/courses/session-items/${semesterCode}`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            // Add any required parameters for the API call
+          }),
+        })
+
+        if (response.ok) {
+          const data = await response.json()
+          const courses = data.data?.items || []
+          console.log(`Found ${courses.length} courses for semester ${semesterCode}`)
+          allCourses.push(...courses)
+        } else {
+          console.warn(`Failed to fetch courses for semester ${semesterCode}: ${response.status}`)
+        }
+      } catch (semesterError) {
+        console.error(`Error fetching courses for semester ${semesterCode}:`, semesterError)
+        // Continue with other semesters even if one fails
+      }
+    }
+
+    console.log(`Total courses fetched: ${allCourses.length}`)
     return NextResponse.json({
-      courses: data.data?.items || [],
+      courses: allCourses,
     })
   } catch (error) {
     console.error("Error fetching courses:", error)
@@ -97,6 +120,53 @@ export async function GET() {
         startTime: "1:00 PM",
         endTime: "2:30 PM",
         room: "Room 150",
+      },
+      {
+        courseCategory: "Operations",
+        courseID: "22091",
+        courseNumber: "MGT 123",
+        courseTitle: "Supply Chain Management",
+        courseSession: "fall",
+        courseSessionStartDate: "20250825 000000.000",
+        courseSessionEndDate: "20251215 000000.000",
+        enrollmentLimit: "40",
+        courseDescription:
+          "Comprehensive study of supply chain management principles and practices in modern business environments.",
+        faculty1: "Smith, John",
+        faculty1Email: "john.smith@yale.edu",
+        termCode: "202503",
+        courseType: "core|mms gbs",
+        units: "2.0",
+        section: "01",
+        cohort: "BLUE",
+        daysTimes: "M W F 9:00 AM-10:00 AM",
+        day: "M",
+        startTime: "9:00 AM",
+        endTime: "10:00 AM",
+        room: "Room 301",
+      },
+      {
+        courseCategory: "Strategy",
+        courseID: "22092",
+        courseNumber: "MGT 456",
+        courseTitle: "Strategic Management",
+        courseSession: "fall",
+        courseSessionStartDate: "20250825 000000.000",
+        courseSessionEndDate: "20251215 000000.000",
+        enrollmentLimit: "35",
+        courseDescription:
+          "Advanced course in strategic management covering competitive analysis, strategic planning, and implementation.",
+        faculty1: "Brown, Lisa",
+        faculty1Email: "lisa.brown@yale.edu",
+        termCode: "202503",
+        courseType: "mam",
+        units: "3.0",
+        section: "01",
+        daysTimes: "T Th 11:00 AM-12:30 PM",
+        day: "T",
+        startTime: "11:00 AM",
+        endTime: "12:30 PM",
+        room: "Room 402",
       },
     ]
 
