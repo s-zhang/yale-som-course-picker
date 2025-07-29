@@ -450,6 +450,55 @@ const getCurrentAndNextSemesters = (): string[] => {
   return semesters
 }
 
+// Component to handle expandable text using the user-provided pattern
+const ExpandableDescription = ({ text }: { text: string }) => {
+  const [isExpanded, setIsExpanded] = useState(false)
+
+  // Only apply the expandable logic if the text is long enough
+  const isLongEnough = text && text.length > 200
+
+  if (!isLongEnough) {
+    return <p className="text-sm text-gray-600 mb-3">{text || ""}</p>
+  }
+
+  return (
+    <div className="relative mb-3">
+      <p
+        className={`text-sm text-gray-600 leading-tight ${!isExpanded ? 'line-clamp-2 after:inline-block after:w-[5ch] after:content-[""]' : ""}`}
+      >
+        {text}
+      </p>
+      {!isExpanded ? (
+        <a
+          onClick={(e) => {
+            e.preventDefault()
+            setIsExpanded(true)
+          }}
+          href="#"
+          className="absolute right-0 bottom-[0.135em] bg-card text-gray-600 text-sm leading-none underline pl-1 cursor-pointer"
+          aria-expanded="false"
+          aria-label="Show full description"
+        >
+          (more)
+        </a>
+      ) : (
+        <a
+          onClick={(e) => {
+            e.preventDefault()
+            setIsExpanded(false)
+          }}
+          href="#"
+          className="text-gray-600 text-sm underline mt-1 cursor-pointer"
+          aria-expanded="true"
+          aria-label="Show less description"
+        >
+          (less)
+        </a>
+      )}
+    </div>
+  )
+}
+
 export default function CourseTable() {
   const [courses, setCourses] = useState<Course[]>([])
   const [scheduledCourses, setScheduledCourses] = useState<ScheduledCourse[]>([])
@@ -462,8 +511,6 @@ export default function CourseTable() {
   const [selectedUnits, setSelectedUnits] = useState<string[]>([])
   const [selectedProgramCohorts, setSelectedProgramCohorts] = useState<string[]>(["Elective"])
   // In the CourseTable component, add a new state to track expanded descriptions
-  const [expandedDescriptions, setExpandedDescriptions] = useState(new Set<string>())
-
   const categories = React.useMemo(() => {
     const categorySet = new Set<string>()
     courses.forEach((course) => {
@@ -692,23 +739,7 @@ export default function CourseTable() {
     selectedProgramCohorts.length > 0 ||
     searchTerm.length > 0
 
-  // Add a function to toggle the expanded state
-  const toggleDescription = (courseId: string) => {
-    setExpandedDescriptions((prev) => {
-      const newSet = new Set(prev)
-      if (newSet.has(courseId)) {
-        newSet.delete(courseId)
-      } else {
-        newSet.add(courseId)
-      }
-      return newSet
-    })
-  }
-
-  // In the renderCourseCard function, update the description rendering
   const renderCourseCard = (course: Course | ScheduledCourse, isScheduled = false) => {
-    const isExpanded = expandedDescriptions.has(course.courseID)
-    const isLongDescription = course.courseDescription && course.courseDescription.length > 150
     const details: React.ReactNode[] = []
 
     if (course.instructors && course.instructors.length > 0) {
@@ -785,19 +816,7 @@ export default function CourseTable() {
                   ))}
                 </div>
                 <h4 className="font-medium text-gray-900 mb-2">{course.courseTitle}</h4>
-                <div className="mb-3">
-                  <p className={`text-sm text-gray-600 ${!isExpanded ? "line-clamp-2" : ""}`}>
-                    {course.courseDescription}
-                  </p>
-                  {isLongDescription && (
-                    <button
-                      onClick={() => toggleDescription(course.courseID)}
-                      className="text-sm text-blue-600 hover:underline mt-1"
-                    >
-                      {isExpanded ? "Show less" : "Show more"}
-                    </button>
-                  )}
-                </div>
+                <ExpandableDescription text={course.courseDescription} />
                 <div className="flex items-center flex-wrap text-sm text-gray-500">
                   {details.map((detail, index) => (
                     <React.Fragment key={index}>
