@@ -7,22 +7,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
-import { Plus, Download, Calendar, List, Search, ChevronDown, X } from "lucide-react"
+import { Plus, Download, Calendar, List, Search } from "lucide-react"
 import { toast } from "@/hooks/use-toast"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { Checkbox } from "@/components/ui/checkbox"
-
-interface Instructor {
-  name: string
-  email: string
-}
-
-interface ProgramCohort {
-  program: string
-  cohort: string
-  color: string
-  name: string
-}
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 interface Course {
   courseID: string
@@ -31,8 +18,6 @@ interface Course {
   courseDescription: string
   faculty1: string
   faculty2?: string
-  faculty1Email: string
-  faculty2Email?: string
   daysTimes: string
   day: string
   startTime: string
@@ -46,12 +31,7 @@ interface Course {
   courseSessionEndDate: string
   courseCategory2?: string
   courseCategory3?: string
-  courseType: string
-  cohort: string
   courseCategories: string[]
-  instructors: Instructor[]
-  meetingDays: string[]
-  programCohorts: ProgramCohort[]
 }
 
 interface ScheduledCourse extends Course {
@@ -74,7 +54,7 @@ const DAY_MAP: { [key: string]: string } = {
   M: "Monday",
   T: "Tuesday",
   W: "Wednesday",
-  Th: "Thursday",
+  R: "Thursday",
   F: "Friday",
 }
 
@@ -106,217 +86,18 @@ const TIME_SLOTS = [
   "8:00 PM",
 ]
 
-// Helper function to parse meeting days from daysTimes field
-const parseMeetingDays = (daysTimes: string): string[] => {
-  if (!daysTimes) return []
-
-  // Extract the days part (everything before the time)
-  const timePattern = /\d{1,2}:\d{2}\s*(AM|PM)/i
-  const timeMatch = daysTimes.match(timePattern)
-
-  if (!timeMatch) return []
-
-  const daysString = daysTimes.substring(0, timeMatch.index).trim()
-  const meetingDays: string[] = []
-
-  // Parse individual days, handling "Th" as a special case
-  let i = 0
-  while (i < daysString.length) {
-    const char = daysString[i]
-
-    if (char === "T" && i + 1 < daysString.length && daysString[i + 1] === "h") {
-      // Handle "Th" for Thursday
-      meetingDays.push("Thursday")
-      i += 2
-    } else if (DAY_MAP[char]) {
-      // Handle single character days
-      meetingDays.push(DAY_MAP[char])
-      i += 1
-    } else {
-      // Skip spaces and other characters
-      i += 1
-    }
-  }
-
-  return meetingDays
-}
-
-// Helper function to process program cohorts from courseType
-const processProgramCohorts = (courseType: string, cohort: string): ProgramCohort[] => {
-  if (!courseType) return []
-
-  const components = courseType.split("|").map((c) => c.trim().toLowerCase())
-  const programCohorts: ProgramCohort[] = []
-
-  components.forEach((component) => {
-    if (component === "elective") {
-      // Skip elective
-      return
-    } else if (component === "core") {
-      // Core: program = "MBA", color = lowercase cohort, name = pascal case cohort
-      // Skip if cohort is null or undefined
-      if (!cohort) {
-        return
-      }
-      programCohorts.push({
-        program: "MBA",
-        cohort: cohort.toLowerCase(),
-        color: cohort.toLowerCase(),
-        name: cohort.charAt(0).toUpperCase() + cohort.slice(1).toLowerCase(),
-      })
-    } else if (component === "mam") {
-      // MAM: program = "MAM", color = "orange", name = "Orange (MAM)"
-      programCohorts.push({
-        program: "MAM",
-        cohort: "",
-        color: "orange",
-        name: "Orange (MAM)",
-      })
-    } else if (component.startsWith("mms")) {
-      // MMS: program = uppercase(component with "mms " prefix removed), color = "purple", name = "Purple (programName)"
-      const programName = component.replace(/^mms\s*/, "").toUpperCase()
-      programCohorts.push({
-        program: programName,
-        cohort: "",
-        color: "purple",
-        name: `Purple (${programName})`,
-      })
-    } else {
-      // Other components: normalize phd/emba, program = component, color = "white", name = component
-      let normalizedComponent = component
-      if (component === "phd") normalizedComponent = "PhD"
-      if (component === "emba") normalizedComponent = "EMBA"
-
-      programCohorts.push({
-        program: normalizedComponent,
-        cohort: "",
-        color: "white",
-        name: normalizedComponent,
-      })
-    }
-  })
-
-  return programCohorts
-}
-
-// Helper function to process course categories and instructors
-const processCourseData = (course: any): Course => {
+// Helper function to process course categories
+const processCourseCategories = (course: any): Course => {
   const categories: string[] = []
-  const instructors: Instructor[] = []
 
-  // Process categories
   if (course.courseCategory) categories.push(course.courseCategory)
   if (course.courseCategory2) categories.push(course.courseCategory2)
   if (course.courseCategory3) categories.push(course.courseCategory3)
 
-  // Process instructors
-  if (course.faculty1 && course.faculty1Email) {
-    instructors.push({
-      name: course.faculty1,
-      email: course.faculty1Email,
-    })
-  }
-  if (course.faculty2 && course.faculty2Email) {
-    instructors.push({
-      name: course.faculty2,
-      email: course.faculty2Email,
-    })
-  }
-
-  // Parse meeting days from daysTimes
-  const meetingDays = parseMeetingDays(course.daysTimes)
-
-  // Process program cohorts
-  const programCohorts = processProgramCohorts(course.courseType || "", course.cohort || "")
-
   return {
     ...course,
-    courseSession: course.courseSession?.trim() || course.courseSession,
     courseCategories: categories,
-    instructors: instructors,
-    meetingDays: meetingDays,
-    programCohorts: programCohorts,
   }
-}
-
-// Multi-select filter component
-const MultiSelectFilter = ({
-  options,
-  selected,
-  onSelectionChange,
-  placeholder,
-  label,
-}: {
-  options: string[]
-  selected: string[]
-  onSelectionChange: (selected: string[]) => void
-  placeholder: string
-  label: string
-}) => {
-  const handleToggle = (option: string) => {
-    if (selected.includes(option)) {
-      onSelectionChange(selected.filter((item) => item !== option))
-    } else {
-      onSelectionChange([...selected, option])
-    }
-  }
-
-  const clearAll = () => {
-    onSelectionChange([])
-  }
-
-  return (
-    <Popover>
-      <PopoverTrigger asChild>
-        <Button variant="outline" className="w-48 justify-between text-left font-normal bg-transparent">
-          <span className="truncate">
-            {selected.length === 0 ? placeholder : selected.length === 1 ? selected[0] : `${selected.length} selected`}
-          </span>
-          <ChevronDown className="ml-2 h-4 w-4 shrink-0" />
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent className="w-64 p-0" align="start">
-        <div className="p-3 border-b">
-          <div className="flex items-center justify-between">
-            <span className="font-medium text-sm">{label}</span>
-            {selected.length > 0 && (
-              <Button variant="ghost" size="sm" onClick={clearAll} className="h-6 px-2 text-xs">
-                Clear
-              </Button>
-            )}
-          </div>
-        </div>
-        <div className="max-h-64 overflow-y-auto">
-          {options.map((option) => (
-            <div key={option} className="flex items-center space-x-2 px-3 py-2 hover:bg-gray-50">
-              <Checkbox id={option} checked={selected.includes(option)} onCheckedChange={() => handleToggle(option)} />
-              <label htmlFor={option} className="text-sm cursor-pointer flex-1 truncate">
-                {option}
-              </label>
-            </div>
-          ))}
-        </div>
-      </PopoverContent>
-    </Popover>
-  )
-}
-
-// Helper function to get background color class for program cohort
-const getProgramCohortBadgeClass = (color: string): string => {
-  if (color.toLowerCase() === "white") {
-    return "bg-white text-gray-800 border border-gray-300 hover:bg-white hover:text-gray-800"
-  }
-
-  const colorMap: { [key: string]: string } = {
-    blue: "bg-blue-500 hover:bg-blue-500 text-white border-0",
-    green: "bg-green-500 hover:bg-green-500 text-white border-0",
-    red: "bg-red-500 hover:bg-red-500 text-white border-0",
-    gold: "bg-yellow-500 hover:bg-yellow-500 text-white border-0",
-    silver: "bg-gray-400 hover:bg-gray-400 text-white border-0",
-    orange: "bg-orange-500 hover:bg-orange-500 text-white border-0",
-    purple: "bg-purple-500 hover:bg-purple-500 text-white border-0",
-  }
-  return colorMap[color.toLowerCase()] || "bg-gray-500 hover:bg-gray-500 text-white border-0"
 }
 
 export default function CourseTable() {
@@ -325,11 +106,7 @@ export default function CourseTable() {
   const [searchTerm, setSearchTerm] = useState("")
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState("list")
-  const [selectedCategories, setSelectedCategories] = useState<string[]>([])
-  const [selectedSessions, setSelectedSessions] = useState<string[]>([])
-  const [selectedInstructors, setSelectedInstructors] = useState<string[]>([])
-  const [selectedUnits, setSelectedUnits] = useState<string[]>([])
-  const [selectedProgramCohorts, setSelectedProgramCohorts] = useState<string[]>([])
+  const [selectedCategory, setSelectedCategory] = useState("all")
 
   const categories = React.useMemo(() => {
     const categorySet = new Set<string>()
@@ -341,42 +118,6 @@ export default function CourseTable() {
     return Array.from(categorySet).sort()
   }, [courses])
 
-  const sessions = React.useMemo(() => {
-    const sessionSet = new Set<string>()
-    courses.forEach((course) => {
-      if (course.courseSession) sessionSet.add(course.courseSession)
-    })
-    return Array.from(sessionSet).sort()
-  }, [courses])
-
-  const instructors = React.useMemo(() => {
-    const instructorSet = new Set<string>()
-    courses.forEach((course) => {
-      course.instructors.forEach((instructor) => {
-        if (instructor.name) instructorSet.add(instructor.name)
-      })
-    })
-    return Array.from(instructorSet).sort()
-  }, [courses])
-
-  const units = React.useMemo(() => {
-    const unitSet = new Set<string>()
-    courses.forEach((course) => {
-      if (course.units) unitSet.add(course.units)
-    })
-    return Array.from(unitSet).sort((a, b) => Number.parseFloat(a) - Number.parseFloat(b))
-  }, [courses])
-
-  const programCohortOptions = React.useMemo(() => {
-    const programCohortSet = new Set<string>()
-    courses.forEach((course) => {
-      course.programCohorts.forEach((pc) => {
-        if (pc.name) programCohortSet.add(pc.name)
-      })
-    })
-    return Array.from(programCohortSet).sort()
-  }, [courses])
-
   useEffect(() => {
     fetchCourses()
   }, [])
@@ -386,7 +127,7 @@ export default function CourseTable() {
       setLoading(true)
       const response = await fetch("/api/courses")
       const data = await response.json()
-      const processedCourses = (data.courses || []).map(processCourseData)
+      const processedCourses = (data.courses || []).map(processCourseCategories)
       setCourses(processedCourses)
     } catch (error) {
       console.error("Error fetching courses:", error)
@@ -432,49 +173,18 @@ export default function CourseTable() {
     let icsContent = "BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//Yale SOM//Course Schedule//EN\n"
 
     scheduledCourses.forEach((course) => {
-      if (course.meetingDays.length > 0 && course.startTime && course.endTime) {
-        try {
-          // Parse dates more carefully - handle format like "20250121 000000.000"
-          let startDate: Date | null = null
-          let endDate: Date | null = null
+      if (course.day && course.startTime && course.endTime) {
+        const startDate = new Date(course.courseSessionStartDate.replace(/(\d{4})(\d{2})(\d{2})/, "$1-$2-$3"))
+        const endDate = new Date(course.courseSessionEndDate.replace(/(\d{4})(\d{2})(\d{2})/, "$1-$2-$3"))
 
-          if (course.courseSessionStartDate) {
-            // Extract just the date part (first 8 characters) and format as YYYY-MM-DD
-            const startDateStr = course.courseSessionStartDate.substring(0, 8)
-            if (startDateStr.length === 8) {
-              const year = startDateStr.substring(0, 4)
-              const month = startDateStr.substring(4, 6)
-              const day = startDateStr.substring(6, 8)
-              startDate = new Date(`${year}-${month}-${day}`)
-            }
-          }
-
-          if (course.courseSessionEndDate) {
-            // Extract just the date part (first 8 characters) and format as YYYY-MM-DD
-            const endDateStr = course.courseSessionEndDate.substring(0, 8)
-            if (endDateStr.length === 8) {
-              const year = endDateStr.substring(0, 4)
-              const month = endDateStr.substring(4, 6)
-              const day = endDateStr.substring(6, 8)
-              endDate = new Date(`${year}-${month}-${day}`)
-            }
-          }
-
-          // Only add event if we have valid dates
-          if (startDate && endDate && !isNaN(startDate.getTime()) && !isNaN(endDate.getTime())) {
-            icsContent += "BEGIN:VEVENT\n"
-            icsContent += `SUMMARY:${course.courseNumber} - ${course.courseTitle}\n`
-            icsContent += `DESCRIPTION:${course.courseDescription.replace(/\n/g, "\\n")}\n`
-            icsContent += `LOCATION:${course.room}\n`
-            icsContent += `DTSTART:${startDate.toISOString().replace(/[-:]/g, "").split(".")[0]}Z\n`
-            icsContent += `DTEND:${endDate.toISOString().replace(/[-:]/g, "").split(".")[0]}Z\n`
-            icsContent += `UID:${course.courseID}@som.yale.edu\n`
-            icsContent += "END:VEVENT\n"
-          }
-        } catch (error) {
-          console.error(`Error processing course ${course.courseNumber}:`, error)
-          // Continue with other courses even if one fails
-        }
+        icsContent += "BEGIN:VEVENT\n"
+        icsContent += `SUMMARY:${course.courseNumber} - ${course.courseTitle}\n`
+        icsContent += `DESCRIPTION:${course.courseDescription.replace(/\n/g, "\\n")}\n`
+        icsContent += `LOCATION:${course.room}\n`
+        icsContent += `DTSTART:${startDate.toISOString().replace(/[-:]/g, "").split(".")[0]}Z\n`
+        icsContent += `DTEND:${endDate.toISOString().replace(/[-:]/g, "").split(".")[0]}Z\n`
+        icsContent += `UID:${course.courseID}@som.yale.edu\n`
+        icsContent += "END:VEVENT\n"
       }
     })
 
@@ -498,14 +208,8 @@ export default function CourseTable() {
     (course) =>
       (course.courseTitle.toLowerCase().includes(searchTerm.toLowerCase()) ||
         course.courseNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        course.instructors.some((instructor) => instructor.name.toLowerCase().includes(searchTerm.toLowerCase()))) &&
-      (selectedCategories.length === 0 || course.courseCategories.some((cat) => selectedCategories.includes(cat))) &&
-      (selectedSessions.length === 0 || selectedSessions.includes(course.courseSession)) &&
-      (selectedInstructors.length === 0 ||
-        course.instructors.some((instructor) => selectedInstructors.includes(instructor.name))) &&
-      (selectedUnits.length === 0 || selectedUnits.includes(course.units)) &&
-      (selectedProgramCohorts.length === 0 ||
-        course.programCohorts.some((pc) => selectedProgramCohorts.includes(pc.name))),
+        course.faculty1.toLowerCase().includes(searchTerm.toLowerCase())) &&
+      (selectedCategory === "all" || course.courseCategories.includes(selectedCategory)),
   )
 
   const getTimePosition = (time: string) => {
@@ -526,23 +230,6 @@ export default function CourseTable() {
     return end - start
   }
 
-  const clearAllFilters = () => {
-    setSelectedCategories([])
-    setSelectedSessions([])
-    setSelectedInstructors([])
-    setSelectedUnits([])
-    setSelectedProgramCohorts([])
-    setSearchTerm("")
-  }
-
-  const hasActiveFilters =
-    selectedCategories.length > 0 ||
-    selectedSessions.length > 0 ||
-    selectedInstructors.length > 0 ||
-    selectedUnits.length > 0 ||
-    selectedProgramCohorts.length > 0 ||
-    searchTerm.length > 0
-
   const renderCourseCard = (course: Course | ScheduledCourse, isScheduled = false) => (
     <Card key={course.courseID} className="hover:shadow-md transition-shadow">
       <CardContent className="p-4">
@@ -558,30 +245,12 @@ export default function CourseTable() {
                   </Badge>
                 ))}
                 <Badge variant="secondary">{course.units} units</Badge>
-                <Badge variant="outline">{course.courseSession}</Badge>
-                {course.programCohorts.map((pc, index) => (
-                  <Badge key={index} className={getProgramCohortBadgeClass(pc.color)}>
-                    {pc.name}
-                  </Badge>
-                ))}
               </div>
               <h4 className="font-medium text-gray-900 mb-2">{course.courseTitle}</h4>
               <p className="text-sm text-gray-600 mb-3 line-clamp-2">{course.courseDescription}</p>
-              <div className="flex items-center space-x-4 text-sm text-gray-500 flex-wrap">
-                <div className="flex items-center space-x-1">
-                  {course.instructors.map((instructor, index) => (
-                    <React.Fragment key={index}>
-                      <a
-                        href={`mailto:${instructor.email}`}
-                        className="text-gray-500 hover:text-gray-700 underline"
-                        title={`Email ${instructor.name}`}
-                      >
-                        {instructor.name}
-                      </a>
-                      {index < course.instructors.length - 1 && <span> • </span>}
-                    </React.Fragment>
-                  ))}
-                </div>
+              <div className="flex items-center space-x-4 text-sm text-gray-500">
+                <span>{course.faculty1}</span>
+                {course.faculty2 && <span>• {course.faculty2}</span>}
                 <span>• {course.daysTimes}</span>
                 <span>• {course.room}</span>
                 {!isScheduled && <span>• Limit: {course.enrollmentLimit}</span>}
@@ -695,10 +364,10 @@ export default function CourseTable() {
                         ))}
 
                         {scheduledCourses
-                          .filter((course) => course.meetingDays.includes(day))
+                          .filter((course) => course.day && DAY_MAP[course.day] === day)
                           .map((course) => (
                             <div
-                              key={`${course.courseID}-${day}`}
+                              key={course.courseID}
                               className={`absolute left-1 right-1 ${course.color} text-white text-xs p-2 rounded shadow-sm cursor-pointer hover:shadow-md transition-shadow`}
                               style={{
                                 top: `${getTimePosition(course.startTime)}px`,
@@ -725,50 +394,22 @@ export default function CourseTable() {
         <div className="border-t pt-8">
           <div className="mb-6">
             <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center space-x-3 flex-wrap gap-y-2">
-                <MultiSelectFilter
-                  options={categories}
-                  selected={selectedCategories}
-                  onSelectionChange={setSelectedCategories}
-                  placeholder="Categories"
-                  label="Categories"
-                />
-                <MultiSelectFilter
-                  options={sessions}
-                  selected={selectedSessions}
-                  onSelectionChange={setSelectedSessions}
-                  placeholder="Sessions"
-                  label="Sessions"
-                />
-                <MultiSelectFilter
-                  options={instructors}
-                  selected={selectedInstructors}
-                  onSelectionChange={setSelectedInstructors}
-                  placeholder="Instructors"
-                  label="Instructors"
-                />
-                <MultiSelectFilter
-                  options={units}
-                  selected={selectedUnits}
-                  onSelectionChange={setSelectedUnits}
-                  placeholder="Units"
-                  label="Units"
-                />
-                <MultiSelectFilter
-                  options={programCohortOptions}
-                  selected={selectedProgramCohorts}
-                  onSelectionChange={setSelectedProgramCohorts}
-                  placeholder="Program/Cohort"
-                  label="Program/Cohort"
-                />
-                {hasActiveFilters && (
-                  <Button variant="ghost" size="sm" onClick={clearAllFilters} className="text-gray-500">
-                    <X className="w-4 h-4 mr-1" />
-                    Clear All
-                  </Button>
-                )}
+              <div className="flex items-center space-x-4">
+                <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                  <SelectTrigger className="w-64">
+                    <SelectValue placeholder="Filter by Category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Categories</SelectItem>
+                    {categories.map((category) => (
+                      <SelectItem key={category} value={category}>
+                        {category}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
-              <div className="relative w-80">
+              <div className="relative w-96">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                 <Input
                   placeholder="Search courses, professors, or course codes..."
