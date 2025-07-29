@@ -17,6 +17,13 @@ interface Instructor {
   email: string
 }
 
+interface ProgramCohort {
+  program: string
+  cohort: string
+  color: string
+  name: string
+}
+
 interface Course {
   courseID: string
   courseNumber: string
@@ -39,9 +46,12 @@ interface Course {
   courseSessionEndDate: string
   courseCategory2?: string
   courseCategory3?: string
+  courseType: string
+  cohort: string
   courseCategories: string[]
   instructors: Instructor[]
   meetingDays: string[]
+  programCohorts: ProgramCohort[]
 }
 
 interface ScheduledCourse extends Course {
@@ -131,6 +141,64 @@ const parseMeetingDays = (daysTimes: string): string[] => {
   return meetingDays
 }
 
+// Helper function to process program cohorts from courseType
+const processProgramCohorts = (courseType: string, cohort: string): ProgramCohort[] => {
+  if (!courseType) return []
+
+  const components = courseType.split("|").map((c) => c.trim().toLowerCase())
+  const programCohorts: ProgramCohort[] = []
+
+  components.forEach((component) => {
+    if (component === "elective") {
+      // Skip elective
+      return
+    } else if (component === "core") {
+      // Core: program = "MBA", color = lowercase cohort, name = pascal case cohort
+      // Skip if cohort is null or undefined
+      if (!cohort) {
+        return
+      }
+      programCohorts.push({
+        program: "MBA",
+        cohort: cohort.toLowerCase(),
+        color: cohort.toLowerCase(),
+        name: cohort.charAt(0).toUpperCase() + cohort.slice(1).toLowerCase(),
+      })
+    } else if (component === "mam") {
+      // MAM: program = "MAM", color = "orange", name = "Orange (MAM)"
+      programCohorts.push({
+        program: "MAM",
+        cohort: "",
+        color: "orange",
+        name: "Orange (MAM)",
+      })
+    } else if (component.startsWith("mms")) {
+      // MMS: program = uppercase(component with "mms " prefix removed), color = "purple", name = "Purple (programName)"
+      const programName = component.replace(/^mms\s*/, "").toUpperCase()
+      programCohorts.push({
+        program: programName,
+        cohort: "",
+        color: "purple",
+        name: `Purple (${programName})`,
+      })
+    } else {
+      // Other components: normalize phd/emba, program = component, color = "white", name = component
+      let normalizedComponent = component
+      if (component === "phd") normalizedComponent = "PhD"
+      if (component === "emba") normalizedComponent = "EMBA"
+
+      programCohorts.push({
+        program: normalizedComponent,
+        cohort: "",
+        color: "white",
+        name: normalizedComponent,
+      })
+    }
+  })
+
+  return programCohorts
+}
+
 // Helper function to process course categories and instructors
 const processCourseData = (course: any): Course => {
   const categories: string[] = []
@@ -158,12 +226,16 @@ const processCourseData = (course: any): Course => {
   // Parse meeting days from daysTimes
   const meetingDays = parseMeetingDays(course.daysTimes)
 
+  // Process program cohorts
+  const programCohorts = processProgramCohorts(course.courseType || "", course.cohort || "")
+
   return {
     ...course,
     courseSession: course.courseSession?.trim() || course.courseSession,
     courseCategories: categories,
     instructors: instructors,
     meetingDays: meetingDays,
+    programCohorts: programCohorts,
   }
 }
 
@@ -229,6 +301,24 @@ const MultiSelectFilter = ({
   )
 }
 
+// Helper function to get background color class for program cohort
+const getProgramCohortBadgeClass = (color: string): string => {
+  if (color.toLowerCase() === "white") {
+    return "bg-white text-gray-800 border border-gray-300 hover:bg-white hover:text-gray-800"
+  }
+
+  const colorMap: { [key: string]: string } = {
+    blue: "bg-blue-500 hover:bg-blue-500 text-white border-0",
+    green: "bg-green-500 hover:bg-green-500 text-white border-0",
+    red: "bg-red-500 hover:bg-red-500 text-white border-0",
+    gold: "bg-yellow-500 hover:bg-yellow-500 text-white border-0",
+    silver: "bg-gray-400 hover:bg-gray-400 text-white border-0",
+    orange: "bg-orange-500 hover:bg-orange-500 text-white border-0",
+    purple: "bg-purple-500 hover:bg-purple-500 text-white border-0",
+  }
+  return colorMap[color.toLowerCase()] || "bg-gray-500 hover:bg-gray-500 text-white border-0"
+}
+
 export default function CourseTable() {
   const [courses, setCourses] = useState<Course[]>([])
   const [scheduledCourses, setScheduledCourses] = useState<ScheduledCourse[]>([])
@@ -239,6 +329,7 @@ export default function CourseTable() {
   const [selectedSessions, setSelectedSessions] = useState<string[]>([])
   const [selectedInstructors, setSelectedInstructors] = useState<string[]>([])
   const [selectedUnits, setSelectedUnits] = useState<string[]>([])
+  const [selectedProgramCohorts, setSelectedProgramCohorts] = useState<string[]>([])
 
   const categories = React.useMemo(() => {
     const categorySet = new Set<string>()
@@ -274,6 +365,16 @@ export default function CourseTable() {
       if (course.units) unitSet.add(course.units)
     })
     return Array.from(unitSet).sort((a, b) => Number.parseFloat(a) - Number.parseFloat(b))
+  }, [courses])
+
+  const programCohortOptions = React.useMemo(() => {
+    const programCohortSet = new Set<string>()
+    courses.forEach((course) => {
+      course.programCohorts.forEach((pc) => {
+        if (pc.name) programCohortSet.add(pc.name)
+      })
+    })
+    return Array.from(programCohortSet).sort()
   }, [courses])
 
   useEffect(() => {
@@ -402,7 +503,9 @@ export default function CourseTable() {
       (selectedSessions.length === 0 || selectedSessions.includes(course.courseSession)) &&
       (selectedInstructors.length === 0 ||
         course.instructors.some((instructor) => selectedInstructors.includes(instructor.name))) &&
-      (selectedUnits.length === 0 || selectedUnits.includes(course.units)),
+      (selectedUnits.length === 0 || selectedUnits.includes(course.units)) &&
+      (selectedProgramCohorts.length === 0 ||
+        course.programCohorts.some((pc) => selectedProgramCohorts.includes(pc.name))),
   )
 
   const getTimePosition = (time: string) => {
@@ -428,6 +531,7 @@ export default function CourseTable() {
     setSelectedSessions([])
     setSelectedInstructors([])
     setSelectedUnits([])
+    setSelectedProgramCohorts([])
     setSearchTerm("")
   }
 
@@ -436,6 +540,7 @@ export default function CourseTable() {
     selectedSessions.length > 0 ||
     selectedInstructors.length > 0 ||
     selectedUnits.length > 0 ||
+    selectedProgramCohorts.length > 0 ||
     searchTerm.length > 0
 
   const renderCourseCard = (course: Course | ScheduledCourse, isScheduled = false) => (
@@ -454,6 +559,11 @@ export default function CourseTable() {
                 ))}
                 <Badge variant="secondary">{course.units} units</Badge>
                 <Badge variant="outline">{course.courseSession}</Badge>
+                {course.programCohorts.map((pc, index) => (
+                  <Badge key={index} className={getProgramCohortBadgeClass(pc.color)}>
+                    {pc.name}
+                  </Badge>
+                ))}
               </div>
               <h4 className="font-medium text-gray-900 mb-2">{course.courseTitle}</h4>
               <p className="text-sm text-gray-600 mb-3 line-clamp-2">{course.courseDescription}</p>
@@ -643,6 +753,13 @@ export default function CourseTable() {
                   onSelectionChange={setSelectedUnits}
                   placeholder="Units"
                   label="Units"
+                />
+                <MultiSelectFilter
+                  options={programCohortOptions}
+                  selected={selectedProgramCohorts}
+                  onSelectionChange={setSelectedProgramCohorts}
+                  placeholder="Program/Cohort"
+                  label="Program/Cohort"
                 />
                 {hasActiveFilters && (
                   <Button variant="ghost" size="sm" onClick={clearAllFilters} className="text-gray-500">
