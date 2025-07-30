@@ -524,7 +524,7 @@ const ExpandableTableCell = ({ text }: { text: string }) => {
 export default function SOMCourse() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const [initialScheduledIds, setInitialScheduledIds] = useState<string[]>([])
+  const [initialScheduledIds, setInitialScheduledIds] = useState<string[] | null>(null)
   const [courses, setCourses] = useState<Course[]>([])
   const [scheduledCourses, setScheduledCourses] = useState<ScheduledCourse[]>([])
   const [searchTerm, setSearchTerm] = useState("")
@@ -597,12 +597,13 @@ export default function SOMCourse() {
     const search = searchParams.get("search")
     if (search) setSearchTerm(search)
     const sched = searchParams.get("scheduled")
-    if (sched) setInitialScheduledIds(sched.split(",").filter(Boolean))
+    setInitialScheduledIds(sched ? sched.split(",").filter(Boolean) : [])
   }, [])
 
   useEffect(() => {
+    if (initialScheduledIds === null) return
     fetchCourses()
-  }, [])
+  }, [initialScheduledIds])
 
   const fetchCourses = async () => {
     try {
@@ -627,7 +628,7 @@ export default function SOMCourse() {
       }, [])
 
       setCourses(uniqueCourses)
-      if (initialScheduledIds.length > 0 && scheduledCourses.length === 0) {
+      if (initialScheduledIds && initialScheduledIds.length > 0 && scheduledCourses.length === 0) {
         const selected: ScheduledCourse[] = []
         initialScheduledIds.forEach((id, idx) => {
           const course = uniqueCourses.find((c) => c.courseID === id)
