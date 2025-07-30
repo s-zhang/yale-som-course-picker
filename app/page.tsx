@@ -723,31 +723,31 @@ export default function SOMCourse() {
       details.push(<span key="room">{course.room}</span>)
     }
 
-    if (course.syllabusUrl || course.oldSyllabusUrl) {
+    if (course.syllabusUrl) {
       details.push(
-        <span key="syllabus-links">
-          {course.syllabusUrl && (
-            <a
-              href={course.syllabusUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="underline"
-            >
-              link
-            </a>
-          )}
-          {course.syllabusUrl && course.oldSyllabusUrl && ', '}
-          {course.oldSyllabusUrl && (
-            <a
-              href={course.oldSyllabusUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="underline"
-            >
-              old
-            </a>
-          )}
-        </span>,
+        <a
+          key="syllabus"
+          href={course.syllabusUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-gray-500 hover:text-gray-700 underline"
+        >
+          Syllabus
+        </a>,
+      )
+    }
+
+    if (course.oldSyllabusUrl) {
+      details.push(
+        <a
+          key="old-syllabus"
+          href={course.oldSyllabusUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-gray-500 hover:text-gray-700 underline"
+        >
+          Syllabus (old)
+        </a>,
       )
     }
 
