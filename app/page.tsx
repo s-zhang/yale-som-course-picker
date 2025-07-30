@@ -77,6 +77,7 @@ const COLORS = [
 ]
 
 const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"]
+const DAYS_SHORT = ["M", "T", "W", "Th", "F"]
 const DAY_MAP: { [key: string]: string } = {
   M: "Monday",
   T: "Tuesday",
@@ -287,14 +288,17 @@ const MultiSelectFilter = ({
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <Button variant="outline" className="w-48 justify-between text-left font-normal bg-transparent">
+        <Button
+          variant="outline"
+          className="w-full sm:w-36 justify-between text-left font-normal bg-transparent"
+        >
           <span className="truncate">
             {selected.length === 0 ? placeholder : selected.length === 1 ? selected[0] : `${selected.length} selected`}
           </span>
           <ChevronDown className="ml-2 h-4 w-4 shrink-0" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-64 p-0" align="start">
+      <PopoverContent className="w-56 p-0" align="start">
         <div className="p-3 border-b">
           <div className="flex items-center justify-between">
             <span className="font-medium text-sm">{label}</span>
@@ -354,14 +358,17 @@ const InstructorSearchFilter = ({
   return (
     <Popover open={isOpen} onOpenChange={setIsOpen}>
       <PopoverTrigger asChild>
-        <Button variant="outline" className="w-48 justify-between text-left font-normal bg-transparent">
+        <Button
+          variant="outline"
+          className="w-full sm:w-36 justify-between text-left font-normal bg-transparent"
+        >
           <span className="truncate">
             {selected.length === 0 ? placeholder : selected.length === 1 ? selected[0] : `${selected.length} selected`}
           </span>
           <ChevronDown className="ml-2 h-4 w-4 shrink-0" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-64 p-0" align="start">
+      <PopoverContent className="w-56 p-0" align="start">
         <div className="p-3 border-b">
           <div className="flex items-center justify-between mb-2">
             <span className="font-medium text-sm">{label}</span>
@@ -886,10 +893,18 @@ export default function SOMCourse() {
     <div className="min-h-screen bg-gray-50">
       <header className="bg-white border-b border-gray-200 px-6 py-4">
         <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-4">
-            <h1 className="text-2xl font-bold text-gray-900">
-              <span className="text-[#000f9f]">SOM</span>Course
-            </h1>
+          <h1 className="text-2xl font-bold text-gray-900">
+            <span className="text-[#000f9f]">SOM</span>Course
+          </h1>
+          <div className="flex items-center space-x-2">
+            <Button onClick={exportToICS} variant="outline" size="sm" disabled={scheduledCourses.length === 0}>
+              <Download className="w-4 h-4 mr-2" />
+              Export ICS
+            </Button>
+            <Button onClick={shareSchedule} variant="outline" size="sm">
+              <Share2 className="w-4 h-4 mr-2" />
+              Share
+            </Button>
           </div>
         </div>
       </header>
@@ -897,24 +912,11 @@ export default function SOMCourse() {
       <div className="px-6 py-6">
         {/* Selected Courses Section - Top */}
         <div className="mb-8">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center space-x-4">
-              <h2 className="text-xl font-semibold">My Schedule</h2>
-              <Badge variant="secondary">{scheduledCourses.length} courses selected</Badge>
-              <Badge variant="outline">
-                {scheduledCourses.reduce((sum, course) => sum + Number.parseFloat(course.units), 0)} total units
-              </Badge>
-            </div>
-            <div className="flex items-center space-x-4">
-              <Button onClick={exportToICS} variant="outline" size="sm" disabled={scheduledCourses.length === 0}>
-                <Download className="w-4 h-4 mr-2" />
-                Export ICS
-              </Button>
-              <Button onClick={shareSchedule} variant="outline" size="sm">
-                <Share2 className="w-4 h-4 mr-2" />
-                Share
-              </Button>
-            </div>
+          <div className="flex items-center mb-4 space-x-4">
+            <Badge variant="secondary">{scheduledCourses.length} courses selected</Badge>
+            <Badge variant="outline">
+              {scheduledCourses.reduce((sum, course) => sum + Number.parseFloat(course.units), 0)} total units
+            </Badge>
           </div>
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -1039,9 +1041,13 @@ export default function SOMCourse() {
                 <div className="bg-white rounded-lg border">
                   <div className="grid grid-cols-6 border-b">
                     <div className="p-4 border-r bg-gray-50"></div>
-                    {DAYS.map((day) => (
-                      <div key={day} className="p-4 text-center font-medium border-r last:border-r-0">
-                        {day}
+                    {DAYS.map((day, i) => (
+                      <div
+                        key={day}
+                        className="p-4 text-center font-medium border-r last:border-r-0"
+                      >
+                        <span className="hidden sm:inline">{day}</span>
+                        <span className="sm:hidden">{DAYS_SHORT[i]}</span>
                       </div>
                     ))}
                   </div>
@@ -1091,8 +1097,8 @@ export default function SOMCourse() {
         {/* Available Courses Section - Bottom */}
         <div className="border-t pt-8">
           <div className="mb-6">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center space-x-3 flex-wrap gap-y-2">
+            <div className="flex flex-wrap items-center gap-2 mb-4">
+              <div className="flex flex-wrap items-center gap-2 flex-1">
                 <MultiSelectFilter
                   options={categories}
                   selected={selectedCategories}
@@ -1135,7 +1141,7 @@ export default function SOMCourse() {
                   </Button>
                 )}
               </div>
-              <div className="relative w-80">
+              <div className="relative w-full sm:w-80 ml-auto">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                 <Input
                   placeholder="Search courses, professors, or course codes..."
