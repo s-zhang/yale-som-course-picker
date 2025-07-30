@@ -594,9 +594,8 @@ export default function SOMCourse() {
     const unitsParam = searchParams.get("units")
     if (unitsParam) setSelectedUnits(unitsParam.split(",").filter(Boolean))
     const pc = searchParams.get("programs")
-    if (hasParams) {
-      if (pc) setSelectedProgramCohorts(pc.split(",").filter(Boolean))
-    } else {
+    if (pc) setSelectedProgramCohorts(pc.split(",").filter(Boolean))
+    if (!hasParams) {
       setSelectedProgramCohorts(["Elective"])
     }
     const search = searchParams.get("search")
