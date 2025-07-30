@@ -502,20 +502,113 @@ const ExpandableDescription = ({ text }: { text: string }) => {
   )
 }
 
-const ExpandableTableCell = ({ text }: { text: string }) => {
-  const [isExpanded, setIsExpanded] = useState(false)
-  const isLongEnough = text && text.length > 100
+const CELL_MAX_WIDTH = "max-w-[14rem]"
 
-  if (!isLongEnough) {
-    return <p className="text-sm text-gray-600">{text || ""}</p>
-  }
+interface ExpandableTableCellProps {
+  content: string | string[]
+  previewWords?: number
+  previewItems?: number
+  minWidth?: string
+}
+
+const ExpandableTableCell = ({
+  content,
+  previewWords = 0,
+  previewItems = 1,
+  minWidth = "",
+}: ExpandableTableCellProps) => {
+  const [isExpanded, setIsExpanded] = useState(false)
+
+  const items = Array.isArray(content) ? content : [content]
+  const firstItem = items[0] || ""
+
+  const needsToggle = Array.isArray(content)
+    ? items.length > previewItems
+    : previewWords > 0 && firstItem.split(" ").length > previewWords
+
+  const previewText = Array.isArray(content)
+    ? items.slice(0, previewItems).join(", ")
+    : previewWords > 0
+      ? firstItem.split(" ").slice(0, previewWords).join(" ")
+      : firstItem
 
   return (
-    <div className="w-64">
-      <p className={`text-sm text-gray-600 ${!isExpanded ? "line-clamp-2" : ""}`}>{text}</p>
-      <button onClick={() => setIsExpanded(!isExpanded)} className="text-blue-600 text-sm underline mt-1">
-        {isExpanded ? "(less)" : "(more)"}
-      </button>
+    <div className={`${CELL_MAX_WIDTH} ${minWidth}`.trim()}>
+      {!isExpanded ? (
+        <span className="whitespace-nowrap">
+          {previewText}
+          {needsToggle && (
+            <button
+              onClick={() => setIsExpanded(true)}
+              className="underline ml-1 text-gray-600"
+            >
+              ...
+            </button>
+          )}
+        </span>
+      ) : (
+        <div className={items.length > 1 ? "flex flex-col" : ""}>
+          {items.length > 1
+            ? items.map((it, idx) => <div key={idx}>{it}</div>)
+            : <p className="whitespace-normal">{firstItem}</p>}
+          {needsToggle && (
+            <button
+              onClick={() => setIsExpanded(false)}
+              className="underline mt-1 text-gray-600"
+            >
+              less
+            </button>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
+const ExpandableListCell = ({
+  items,
+  previewItems = 1,
+}: {
+  items: React.ReactNode[]
+  previewItems?: number
+}) => {
+  const [isExpanded, setIsExpanded] = useState(false)
+  const needsToggle = items.length > previewItems
+
+  return (
+    <div className={CELL_MAX_WIDTH}>
+      {!isExpanded ? (
+        <span className="whitespace-nowrap">
+          {items.slice(0, previewItems).map((item, idx) => (
+            <React.Fragment key={idx}>
+              {item}
+              {idx < previewItems - 1 && ", "}
+            </React.Fragment>
+          ))}
+          {needsToggle && (
+            <button
+              onClick={() => setIsExpanded(true)}
+              className="underline ml-1 text-gray-600"
+            >
+              ...
+            </button>
+          )}
+        </span>
+      ) : (
+        <div className="flex flex-col">
+          {items.map((item, idx) => (
+            <div key={idx}>{item}</div>
+          ))}
+          {needsToggle && (
+            <button
+              onClick={() => setIsExpanded(false)}
+              className="underline mt-1 text-gray-600"
+            >
+              less
+            </button>
+          )}
+        </div>
+      )}
     </div>
   )
 }
@@ -856,16 +949,16 @@ export default function SOMCourse() {
                   <TableHeader>
                     <TableRow>
                       <TableHead className="w-12"></TableHead>
-                      <TableHead>Number</TableHead>
-                      <TableHead>Title</TableHead>
-                      <TableHead>Session</TableHead>
-                      <TableHead>Category</TableHead>
-                      <TableHead>Instructor(s)</TableHead>
-                      <TableHead>Meets</TableHead>
-                      <TableHead>Location</TableHead>
-                      <TableHead>Units</TableHead>
-                      <TableHead>Syllabus</TableHead>
-                      <TableHead>Description</TableHead>
+                      <TableHead className={CELL_MAX_WIDTH}>Number</TableHead>
+                      <TableHead className={CELL_MAX_WIDTH}>Title</TableHead>
+                      <TableHead className={CELL_MAX_WIDTH}>Session</TableHead>
+                      <TableHead className={CELL_MAX_WIDTH}>Category</TableHead>
+                      <TableHead className={CELL_MAX_WIDTH}>Instructor(s)</TableHead>
+                      <TableHead className={CELL_MAX_WIDTH}>Meets</TableHead>
+                      <TableHead className={CELL_MAX_WIDTH}>Location</TableHead>
+                      <TableHead className={CELL_MAX_WIDTH}>Units</TableHead>
+                      <TableHead className={CELL_MAX_WIDTH}>Syllabus</TableHead>
+                      <TableHead className={CELL_MAX_WIDTH}>Description</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -882,27 +975,33 @@ export default function SOMCourse() {
                               <Minus className="h-4 w-4" />
                             </Button>
                           </TableCell>
-                          <TableCell>{course.courseNumber}</TableCell>
-                          <TableCell className="font-medium">{course.courseTitle}</TableCell>
-                          <TableCell>{course.courseSession}</TableCell>
-                          <TableCell>{course.courseCategories.join(", ")}</TableCell>
-                          <TableCell>
-                            {course.instructors.map((instructor) => (
-                              <div key={instructor.email}>
+                          <TableCell className={CELL_MAX_WIDTH}>{course.courseNumber}</TableCell>
+                          <TableCell className={CELL_MAX_WIDTH}>
+                            <ExpandableTableCell content={course.courseTitle} previewWords={4} />
+                          </TableCell>
+                          <TableCell className={CELL_MAX_WIDTH}>{course.courseSession}</TableCell>
+                          <TableCell className={CELL_MAX_WIDTH}>
+                            <ExpandableTableCell content={course.courseCategories} previewItems={1} />
+                          </TableCell>
+                          <TableCell className={CELL_MAX_WIDTH}>
+                            <ExpandableListCell
+                              items={course.instructors.map((instructor) => (
                                 <a
+                                  key={instructor.email}
                                   href={`mailto:${instructor.email}`}
                                   className="text-gray-600 hover:underline"
                                   title={`Email ${instructor.name}`}
                                 >
                                   {instructor.name}
                                 </a>
-                              </div>
-                            ))}
+                              ))}
+                              previewItems={1}
+                            />
                           </TableCell>
-                          <TableCell>{course.daysTimes}</TableCell>
-                          <TableCell>{course.room}</TableCell>
-                          <TableCell>{course.units}</TableCell>
-                          <TableCell>
+                          <TableCell className={CELL_MAX_WIDTH}>{course.daysTimes}</TableCell>
+                          <TableCell className={CELL_MAX_WIDTH}>{course.room}</TableCell>
+                          <TableCell className={CELL_MAX_WIDTH}>{course.units}</TableCell>
+                          <TableCell className={CELL_MAX_WIDTH}>
                             <div className="flex flex-col space-y-1">
                               {course.syllabusUrl && (
                                 <a
@@ -926,8 +1025,8 @@ export default function SOMCourse() {
                               )}
                             </div>
                           </TableCell>
-                          <TableCell>
-                            <ExpandableTableCell text={course.courseDescription} />
+                          <TableCell className={`${CELL_MAX_WIDTH} min-w-64`}>
+                            <ExpandableTableCell content={course.courseDescription} previewWords={20} />
                           </TableCell>
                         </TableRow>
                       ))
