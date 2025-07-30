@@ -711,18 +711,22 @@ export default function SOMCourse() {
     }
   }
 
+  const lowerSearch = searchTerm.toLowerCase()
+
   const filteredCourses = courses.filter(
     (course) =>
-      (course.courseTitle.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        course.courseNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        course.instructors.some((instructor) => instructor.name.toLowerCase().includes(searchTerm.toLowerCase()))) &&
-      (selectedCategories.length === 0 || course.courseCategories.some((cat) => selectedCategories.includes(cat))) &&
+      ((course.courseTitle || "").toLowerCase().includes(lowerSearch) ||
+        (course.courseNumber || "").toLowerCase().includes(lowerSearch) ||
+        (course.courseDescription || "").toLowerCase().includes(lowerSearch) ||
+        (course.courseCategories || []).some((cat) => (cat || "").toLowerCase().includes(lowerSearch)) ||
+        (course.instructors || []).some((instructor) => (instructor.name || "").toLowerCase().includes(lowerSearch))) &&
+      (selectedCategories.length === 0 || (course.courseCategories || []).some((cat) => selectedCategories.includes(cat))) &&
       (selectedSessions.length === 0 || selectedSessions.includes(course.courseSession)) &&
       (selectedInstructors.length === 0 ||
-        course.instructors.some((instructor) => selectedInstructors.includes(instructor.name))) &&
+        (course.instructors || []).some((instructor) => selectedInstructors.includes(instructor.name))) &&
       (selectedUnits.length === 0 || selectedUnits.includes(course.units)) &&
       (selectedProgramCohorts.length === 0 ||
-        course.programCohorts.some((pc) => selectedProgramCohorts.includes(pc.name))),
+        (course.programCohorts || []).some((pc) => selectedProgramCohorts.includes(pc.name))),
   )
 
   const getTimePosition = (time: string) => {
@@ -1153,7 +1157,7 @@ export default function SOMCourse() {
               <div className="relative w-full sm:w-80 ml-auto">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                 <Input
-                  placeholder="Search courses, professors, or course codes..."
+                  placeholder="Search courses, professors, categories, or descriptions..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-10"
