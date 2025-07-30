@@ -759,6 +759,11 @@ export default function SOMCourse() {
     return slots
   }, [scheduledCourses])
 
+  const maxTimeLabel = React.useMemo(
+    () => timeSlots.reduce((a, b) => (b.length > a.length ? b : a), ""),
+    [timeSlots]
+  )
+
   const scheduleStartMinutes = React.useMemo(
     () => parseTimeToMinutes(timeSlots[0] ?? "8:00 AM"),
     [timeSlots]
@@ -1137,7 +1142,9 @@ export default function SOMCourse() {
                     className="grid grid-cols-6 border-b"
                     style={{ gridTemplateColumns: 'auto repeat(5, 1fr)' }}
                   >
-                    <div className="p-4 border-r bg-gray-50"></div>
+                    <div className="p-4 border-r bg-gray-50">
+                      <span className="invisible">{maxTimeLabel}</span>
+                    </div>
                     {DAYS.map((day, i) => (
                       <div
                         key={day}
