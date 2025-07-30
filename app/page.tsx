@@ -786,7 +786,7 @@ export default function SOMCourse() {
     }
 
     return () => cancelAnimationFrame(raf)
-  }, [activeTab, timeSlots])
+  }, [activeTab, timeSlots, scheduledCourses])
 
   const scheduleStartMinutes = React.useMemo(
     () => parseTimeToMinutes(timeSlots[0] ?? "8:00 AM"),
@@ -1168,7 +1168,7 @@ export default function SOMCourse() {
                   >
                     <div
                       className="border-r bg-gray-50 px-2 py-1"
-                      style={{ width: timeColumnWidth }}
+                      style={{ width: timeColumnWidth || "auto" }}
                     ></div>
                     {DAYS.map((day, i) => (
                       <div
