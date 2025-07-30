@@ -723,31 +723,31 @@ export default function SOMCourse() {
       details.push(<span key="room">{course.room}</span>)
     }
 
-    if (course.syllabusUrl) {
+    if (course.syllabusUrl || course.oldSyllabusUrl) {
       details.push(
-        <a
-          key="syllabus"
-          href={course.syllabusUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-gray-500 hover:text-gray-700 underline"
-        >
-          Syllabus
-        </a>,
-      )
-    }
-
-    if (course.oldSyllabusUrl) {
-      details.push(
-        <a
-          key="old-syllabus"
-          href={course.oldSyllabusUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-gray-500 hover:text-gray-700 underline"
-        >
-          Syllabus (old)
-        </a>,
+        <span key="syllabus-links">
+          {course.syllabusUrl && (
+            <a
+              href={course.syllabusUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline"
+            >
+              link
+            </a>
+          )}
+          {course.syllabusUrl && course.oldSyllabusUrl && ', '}
+          {course.oldSyllabusUrl && (
+            <a
+              href={course.oldSyllabusUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline"
+            >
+              old
+            </a>
+          )}
+        </span>,
       )
     }
 
@@ -903,27 +903,33 @@ export default function SOMCourse() {
                           <TableCell>{course.room}</TableCell>
                           <TableCell>{course.units}</TableCell>
                           <TableCell>
-                            <div className="flex flex-col space-y-1">
-                              {course.syllabusUrl && (
-                                <a
-                                  href={course.syllabusUrl}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="text-blue-600 hover:underline"
-                                >
-                                  Syllabus
-                                </a>
-                              )}
-                              {course.oldSyllabusUrl && (
-                                <a
-                                  href={course.oldSyllabusUrl}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="text-blue-600 hover:underline"
-                                >
-                                  Old Syllabus
-                                </a>
-                              )}
+                            <div>
+                              {course.syllabusUrl || course.oldSyllabusUrl ? (
+                                <span>
+                                  {course.syllabusUrl && (
+                                    <a
+                                      href={course.syllabusUrl}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="underline"
+                                    >
+                                      link
+                                    </a>
+                                  )}
+                                  {course.syllabusUrl && course.oldSyllabusUrl &&
+                                    ', '}
+                                  {course.oldSyllabusUrl && (
+                                    <a
+                                      href={course.oldSyllabusUrl}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="underline"
+                                    >
+                                      old
+                                    </a>
+                                  )}
+                                </span>
+                              ) : null}
                             </div>
                           </TableCell>
                           <TableCell>
