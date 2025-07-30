@@ -521,7 +521,7 @@ const ExpandableTableCell = ({ text }: { text: string }) => {
   return (
     <div className="w-64">
       <p className={`text-sm text-gray-600 ${!isExpanded ? "line-clamp-2" : ""}`}>{text}</p>
-      <button onClick={() => setIsExpanded(!isExpanded)} className="text-blue-600 text-sm underline mt-1">
+      <button onClick={() => setIsExpanded(!isExpanded)} className="text-gray-600 text-sm underline mt-1">
         {isExpanded ? "(less)" : "(more)"}
       </button>
     </div>
@@ -948,7 +948,7 @@ export default function SOMCourse() {
                       <TableHead>Title</TableHead>
                       <TableHead>Session</TableHead>
                       <TableHead>Category</TableHead>
-                      <TableHead>Instructor(s)</TableHead>
+                      <TableHead>Instructor</TableHead>
                       <TableHead>Meets</TableHead>
                       <TableHead>Location</TableHead>
                       <TableHead>Units</TableHead>
