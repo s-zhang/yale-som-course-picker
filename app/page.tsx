@@ -792,15 +792,15 @@ export default function SOMCourse() {
       })
     }
 
-    if (course.daysTimes) {
+    if (course.daysTimes && course.daysTimes.trim()) {
       details.push(<span key="daysTimes">{course.daysTimes}</span>)
     }
 
-    if (course.room) {
+    if (course.room && course.room.trim()) {
       details.push(<span key="room">{course.room}</span>)
     }
 
-    if (course.syllabusUrl) {
+    if (course.syllabusUrl && course.syllabusUrl.trim()) {
       details.push(
         <a
           key="syllabus"
@@ -814,7 +814,7 @@ export default function SOMCourse() {
       )
     }
 
-    if (course.oldSyllabusUrl) {
+    if (course.oldSyllabusUrl && course.oldSyllabusUrl.trim()) {
       details.push(
         <a
           key="old-syllabus"
