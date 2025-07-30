@@ -763,9 +763,26 @@ export default function SOMCourse() {
   const [timeColumnWidth, setTimeColumnWidth] = React.useState<number>()
 
   React.useLayoutEffect(() => {
-    if (activeTab === "calendar" && timeColumnRef.current) {
-      setTimeColumnWidth(timeColumnRef.current.getBoundingClientRect().width)
+    if (activeTab !== "calendar" || !timeColumnRef.current) return
+
+    const updateWidth = () => {
+      if (timeColumnRef.current) {
+        setTimeColumnWidth(timeColumnRef.current.getBoundingClientRect().width)
+      }
     }
+
+    updateWidth()
+
+    const Observer = (window as any).ResizeObserver
+    if (Observer) {
+      const observer = new Observer(updateWidth)
+      observer.observe(timeColumnRef.current)
+      return () => {
+        observer.disconnect()
+      }
+    }
+
+    return undefined
   }, [activeTab, timeSlots])
 
   const scheduleStartMinutes = React.useMemo(
