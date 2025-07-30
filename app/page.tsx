@@ -1095,6 +1095,11 @@ export default function SOMCourse() {
                             >
                               <div className="font-medium">{course.courseNumber}</div>
                               <div className="truncate">{course.courseTitle}</div>
+                              {course.courseSession && (
+                                <div className="text-xs opacity-90">
+                                  {course.courseSession}
+                                </div>
+                              )}
                               <div className="text-xs opacity-90">{course.room}</div>
                             </div>
                           ))}
