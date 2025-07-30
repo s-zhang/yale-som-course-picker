@@ -5,8 +5,6 @@
 [![Deployed on Vercel](https://img.shields.io/badge/Deployed%20on-Vercel-black?style=for-the-badge&logo=vercel)](https://vercel.com/personal-18b67004/v0-yale-som-course-picker)
 [![Built with v0](https://img.shields.io/badge/Built%20with-v0.dev-black?style=for-the-badge)](https://v0.dev/chat/projects/AX0giZiARrv)
 
-Made by [![LinkedIn](https://img.shields.io/badge/-LinkedIn-blue?logo=linkedin&style=for-the-badge)](https://www.linkedin.com/in/pingshan-zhang) · Support me by starring this repo on GitHub [![GitHub Stars](https://img.shields.io/github/stars/s-zhang/yale-som-course-picker?style=social)](https://github.com/s-zhang/yale-som-course-picker)
-
 ## Overview
 
 This repository will stay in sync with your deployed chats on [v0.dev](https://v0.dev).

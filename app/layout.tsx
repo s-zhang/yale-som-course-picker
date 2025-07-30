@@ -3,6 +3,7 @@ import type { Metadata } from "next"
 import { Inter } from "next/font/google"
 import "./globals.css"
 import { Toaster } from "@/components/ui/toaster"
+import Footer from "@/components/footer"
 
 const inter = Inter({
   subsets: ["latin"],
@@ -28,6 +29,7 @@ export default function RootLayout({
     <html lang="en" className={inter.variable}>
       <body className={inter.className}>
         {children}
+        <Footer />
         <Toaster />
       </body>
     </html>
