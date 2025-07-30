@@ -7,7 +7,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
-import { Plus, Download, Calendar, TableIcon, Search, ChevronDown, X, Minus } from "lucide-react"
+import { Plus, Download, Calendar, TableIcon, Search, ChevronDown, X, Minus, Share2 } from "lucide-react"
+import { useRouter, useSearchParams } from "next/navigation"
 import { toast } from "@/hooks/use-toast"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -519,6 +520,9 @@ const ExpandableTableCell = ({ text }: { text: string }) => {
 }
 
 export default function CourseTable() {
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const [initialScheduledIds, setInitialScheduledIds] = useState<string[]>([])
   const [courses, setCourses] = useState<Course[]>([])
   const [scheduledCourses, setScheduledCourses] = useState<ScheduledCourse[]>([])
   const [searchTerm, setSearchTerm] = useState("")
@@ -576,6 +580,24 @@ export default function CourseTable() {
     return Array.from(programCohortSet).sort()
   }, [courses])
 
+  // Initialize state from query parameters
+  useEffect(() => {
+    const cats = searchParams.get("categories")
+    if (cats) setSelectedCategories(cats.split(",").filter(Boolean))
+    const sess = searchParams.get("sessions")
+    if (sess) setSelectedSessions(sess.split(",").filter(Boolean))
+    const instr = searchParams.get("instructors")
+    if (instr) setSelectedInstructors(instr.split(",").filter(Boolean))
+    const unitsParam = searchParams.get("units")
+    if (unitsParam) setSelectedUnits(unitsParam.split(",").filter(Boolean))
+    const pc = searchParams.get("programs")
+    if (pc) setSelectedProgramCohorts(pc.split(",").filter(Boolean))
+    const search = searchParams.get("search")
+    if (search) setSearchTerm(search)
+    const sched = searchParams.get("scheduled")
+    if (sched) setInitialScheduledIds(sched.split(",").filter(Boolean))
+  }, [])
+
   useEffect(() => {
     fetchCourses()
   }, [])
@@ -603,6 +625,18 @@ export default function CourseTable() {
       }, [])
 
       setCourses(uniqueCourses)
+      if (initialScheduledIds.length > 0 && scheduledCourses.length === 0) {
+        const selected: ScheduledCourse[] = []
+        initialScheduledIds.forEach((id, idx) => {
+          const course = uniqueCourses.find((c) => c.courseID === id)
+          if (course) {
+            selected.push({ ...course, color: COLORS[idx % COLORS.length] })
+          }
+        })
+        if (selected.length > 0) {
+          setScheduledCourses(selected)
+        }
+      }
     } catch (error) {
       console.error("Error fetching courses:", error)
       toast({
@@ -695,6 +729,19 @@ export default function CourseTable() {
     })
   }
 
+  const shareSchedule = async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.href)
+      toast({ title: "URL Copied", description: "Share this link with others." })
+    } catch (err) {
+      toast({
+        title: "Error",
+        description: "Failed to copy URL to clipboard.",
+        variant: "destructive",
+      })
+    }
+  }
+
   const filteredCourses = courses.filter(
     (course) =>
       (course.courseTitle.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -743,6 +790,36 @@ export default function CourseTable() {
     selectedUnits.length > 0 ||
     selectedProgramCohorts.length > 0 ||
     searchTerm.length > 0
+
+  // Update query parameters when filters or schedule change
+  useEffect(() => {
+    const params = new URLSearchParams()
+    if (selectedCategories.length)
+      params.set("categories", selectedCategories.join(","))
+    if (selectedSessions.length)
+      params.set("sessions", selectedSessions.join(","))
+    if (selectedInstructors.length)
+      params.set("instructors", selectedInstructors.join(","))
+    if (selectedUnits.length) params.set("units", selectedUnits.join(","))
+    if (selectedProgramCohorts.length)
+      params.set("programs", selectedProgramCohorts.join(","))
+    if (searchTerm) params.set("search", searchTerm)
+    if (scheduledCourses.length)
+      params.set(
+        "scheduled",
+        scheduledCourses.map((c) => c.courseID).join(",")
+      )
+    const query = params.toString()
+    router.replace(query ? `?${query}` : "?", { scroll: false })
+  }, [
+    selectedCategories,
+    selectedSessions,
+    selectedInstructors,
+    selectedUnits,
+    selectedProgramCohorts,
+    searchTerm,
+    scheduledCourses,
+  ])
 
   const renderCourseCard = (course: Course) => {
     const details: React.ReactNode[] = []
@@ -879,6 +956,10 @@ export default function CourseTable() {
               <Button onClick={exportToICS} variant="outline" size="sm" disabled={scheduledCourses.length === 0}>
                 <Download className="w-4 h-4 mr-2" />
                 Export ICS
+              </Button>
+              <Button onClick={shareSchedule} variant="outline" size="sm">
+                <Share2 className="w-4 h-4 mr-2" />
+                Share
               </Button>
             </div>
           </div>
