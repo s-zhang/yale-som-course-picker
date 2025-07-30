@@ -759,34 +759,10 @@ export default function SOMCourse() {
     return slots
   }, [scheduledCourses])
 
-  const timeColumnRef = React.useRef<HTMLDivElement | null>(null)
-  const [timeColumnWidth, setTimeColumnWidth] = React.useState<number>()
-
-  React.useLayoutEffect(() => {
-    if (activeTab !== "calendar" || !timeColumnRef.current) return
-
-    const updateWidth = () => {
-      if (timeColumnRef.current) {
-        setTimeColumnWidth(timeColumnRef.current.getBoundingClientRect().width)
-      }
-    }
-
-    // force update after the element becomes visible
-    const raf = requestAnimationFrame(updateWidth)
-    updateWidth()
-
-    const Observer = (window as any).ResizeObserver
-    if (Observer) {
-      const observer = new Observer(updateWidth)
-      observer.observe(timeColumnRef.current)
-      return () => {
-        cancelAnimationFrame(raf)
-        observer.disconnect()
-      }
-    }
-
-    return () => cancelAnimationFrame(raf)
-  }, [activeTab, timeSlots, scheduledCourses])
+  const maxTimeLabel = React.useMemo(
+    () => timeSlots.reduce((max, t) => (t.length > max.length ? t : max), ""),
+    [timeSlots],
+  )
 
   const scheduleStartMinutes = React.useMemo(
     () => parseTimeToMinutes(timeSlots[0] ?? "8:00 AM"),
@@ -1164,12 +1140,11 @@ export default function SOMCourse() {
                 <div className="bg-white rounded-lg border">
                   <div
                     className="grid grid-cols-6 border-b"
-                    style={{ gridTemplateColumns: 'auto repeat(5, 1fr)' }}
+                    style={{ gridTemplateColumns: 'max-content repeat(5, 1fr)' }}
                   >
-                    <div
-                      className="border-r bg-gray-50 px-2 py-1"
-                      style={{ width: timeColumnWidth || "auto" }}
-                    ></div>
+                    <div className="border-r bg-gray-50 px-2 py-1">
+                      <span className="invisible">{maxTimeLabel}</span>
+                    </div>
                     {DAYS.map((day, i) => (
                       <div
                         key={day}
@@ -1185,10 +1160,10 @@ export default function SOMCourse() {
                     className="grid grid-cols-6 relative"
                     style={{
                       height: `${timeSlots.length * TIME_SLOT_HEIGHT}px`,
-                      gridTemplateColumns: 'auto repeat(5, 1fr)'
+                      gridTemplateColumns: 'max-content repeat(5, 1fr)'
                     }}
                   >
-                    <div className="border-r bg-gray-50" ref={timeColumnRef}>
+                    <div className="border-r bg-gray-50">
                       {timeSlots.map((time) => (
                         <div key={time} className="h-10 border-b text-xs text-gray-500 px-2 py-1 whitespace-nowrap">
                           {time}
