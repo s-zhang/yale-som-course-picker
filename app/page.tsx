@@ -86,7 +86,7 @@ const DAY_MAP: { [key: string]: string } = {
   F: "Friday",
 }
 
-const TIME_SLOTS = [
+const DEFAULT_TIME_SLOTS = [
   "8:00 AM",
   "8:30 AM",
   "9:00 AM",
@@ -117,6 +117,27 @@ const TIME_SLOTS = [
   "9:30 PM",
   "10:00 PM",
 ]
+
+const TIME_SLOT_HEIGHT = 40 // px per 30 minute slot
+
+const parseTimeToMinutes = (time: string): number => {
+  const [timeStr, period] = time.split(" ")
+  const [hoursStr, minutesStr] = timeStr.split(":")
+  let hours = Number(hoursStr)
+  const minutes = Number(minutesStr)
+  if (period === "PM" && hours !== 12) hours += 12
+  if (period === "AM" && hours === 12) hours = 0
+  return hours * 60 + minutes
+}
+
+const formatMinutesToTime = (minutes: number): string => {
+  const hrs24 = Math.floor(minutes / 60)
+  const mins = minutes % 60
+  const period = hrs24 >= 12 ? "PM" : "AM"
+  let hrs12 = hrs24 % 12
+  if (hrs12 === 0) hrs12 = 12
+  return `${hrs12}:${mins.toString().padStart(2, "0")} ${period}`
+}
 
 // Helper function to parse meeting days from daysTimes field
 const parseMeetingDays = (daysTimes: string): string[] => {
@@ -721,23 +742,100 @@ export default function SOMCourse() {
         course.programCohorts.some((pc) => selectedProgramCohorts.includes(pc.name))),
   )
 
-  const getTimePosition = (time: string) => {
-    const [timeStr, period] = time.split(" ")
-    const [hours, minutes] = timeStr.split(":").map(Number)
-    let hour24 = hours
-    if (period === "PM" && hours !== 12) hour24 += 12
-    if (period === "AM" && hours === 12) hour24 = 0
+  const timeSlots = React.useMemo(() => {
+    if (scheduledCourses.length === 0) return DEFAULT_TIME_SLOTS
+    const mins = scheduledCourses.flatMap((c) => [
+      parseTimeToMinutes(c.startTime),
+      parseTimeToMinutes(c.endTime),
+    ])
+    let min = Math.min(...mins)
+    let max = Math.max(...mins)
+    min = Math.floor((min - 60) / 30) * 30
+    max = Math.ceil((max + 60) / 30) * 30
+    const slots: string[] = []
+    for (let t = min; t <= max; t += 30) {
+      slots.push(formatMinutesToTime(t))
+    }
+    return slots
+  }, [scheduledCourses])
 
-    const totalMinutes = hour24 * 60 + minutes
-    const startMinutes = 8 * 60 // 8:00 AM
-    return ((totalMinutes - startMinutes) / 30) * 40 // 40px per 30min slot
+  const timeColumnRef = React.useRef<HTMLDivElement | null>(null)
+  const [timeColumnWidth, setTimeColumnWidth] = React.useState<number>()
+
+  React.useLayoutEffect(() => {
+    if (timeColumnRef.current) {
+      setTimeColumnWidth(timeColumnRef.current.getBoundingClientRect().width)
+    }
+  }, [timeSlots])
+
+  const scheduleStartMinutes = React.useMemo(
+    () => parseTimeToMinutes(timeSlots[0] ?? "8:00 AM"),
+    [timeSlots]
+  )
+
+  const getTimePosition = (time: string) => {
+    const totalMinutes = parseTimeToMinutes(time)
+    return ((totalMinutes - scheduleStartMinutes) / 30) * TIME_SLOT_HEIGHT
   }
 
   const getCourseDuration = (startTime: string, endTime: string) => {
-    const start = getTimePosition(startTime)
-    const end = getTimePosition(endTime)
-    return end - start
+    const start = parseTimeToMinutes(startTime)
+    const end = parseTimeToMinutes(endTime)
+    return ((end - start) / 30) * TIME_SLOT_HEIGHT
   }
+
+  const computeCourseLayout = (courses: ScheduledCourse[]) => {
+    const result: Record<string, { index: number; total: number }> = {}
+    const sorted = [...courses].sort(
+      (a, b) => parseTimeToMinutes(a.startTime) - parseTimeToMinutes(b.startTime)
+    )
+    let group: ScheduledCourse[] = []
+    let groupEnd = 0
+    const finalize = () => {
+      if (group.length === 0) return
+      const columns: number[] = []
+      group.forEach((course) => {
+        const start = parseTimeToMinutes(course.startTime)
+        const end = parseTimeToMinutes(course.endTime)
+        let col = 0
+        while (col < columns.length && start < columns[col]) {
+          col++
+        }
+        if (col === columns.length) columns.push(0)
+        columns[col] = end
+        result[course.courseID] = { index: col, total: 0 }
+      })
+      const total = columns.length
+      group.forEach((c) => {
+        result[c.courseID].total = total
+      })
+      group = []
+    }
+    for (const course of sorted) {
+      const start = parseTimeToMinutes(course.startTime)
+      const end = parseTimeToMinutes(course.endTime)
+      if (group.length === 0 || start < groupEnd) {
+        groupEnd = Math.max(groupEnd, end)
+        group.push(course)
+      } else {
+        finalize()
+        group.push(course)
+        groupEnd = end
+      }
+    }
+    finalize()
+    return result
+  }
+
+  const layoutByDay = React.useMemo(() => {
+    const dayLayouts: Record<string, Record<string, { index: number; total: number }>> = {}
+    DAYS.forEach((d) => {
+      dayLayouts[d] = computeCourseLayout(
+        scheduledCourses.filter((c) => c.meetingDays.includes(d))
+      )
+    })
+    return dayLayouts
+  }, [scheduledCourses])
 
   const clearAllFilters = () => {
     setSelectedCategories([])
@@ -1044,8 +1142,14 @@ export default function SOMCourse() {
                 </Card>
               ) : (
                 <div className="bg-white rounded-lg border">
-                  <div className="grid grid-cols-6 border-b">
-                    <div className="p-4 border-r bg-gray-50"></div>
+                  <div
+                    className="grid grid-cols-6 border-b"
+                    style={{ gridTemplateColumns: 'auto repeat(5, 1fr)' }}
+                  >
+                    <div
+                      className="border-r bg-gray-50 px-2 py-1"
+                      style={{ width: timeColumnWidth }}
+                    ></div>
                     {DAYS.map((day, i) => (
                       <div
                         key={day}
@@ -1057,10 +1161,13 @@ export default function SOMCourse() {
                     ))}
                   </div>
 
-                  <div className="grid grid-cols-6 relative" style={{ minHeight: "400px" }}>
-                    <div className="border-r bg-gray-50">
-                      {TIME_SLOTS.map((time) => (
-                        <div key={time} className="h-10 border-b text-xs text-gray-500 px-2 py-1">
+                  <div
+                    className="grid grid-cols-6 relative"
+                    style={{ minHeight: '400px', gridTemplateColumns: 'auto repeat(5, 1fr)' }}
+                  >
+                    <div className="border-r bg-gray-50" ref={timeColumnRef}>
+                      {timeSlots.map((time) => (
+                        <div key={time} className="h-10 border-b text-xs text-gray-500 px-2 py-1 whitespace-nowrap">
                           {time}
                         </div>
                       ))}
@@ -1068,7 +1175,7 @@ export default function SOMCourse() {
 
                     {DAYS.map((day) => (
                       <div key={day} className="border-r last:border-r-0 relative">
-                        {TIME_SLOTS.map((time) => (
+                        {timeSlots.map((time) => (
                           <div key={time} className="h-10 border-b border-gray-100"></div>
                         ))}
 
@@ -1077,10 +1184,12 @@ export default function SOMCourse() {
                           .map((course) => (
                             <div
                               key={`${course.courseID}-${day}`}
-                              className={`absolute left-1 right-1 ${course.color} text-white text-xs p-2 rounded shadow-sm cursor-pointer hover:shadow-md transition-shadow`}
+                              className={`absolute ${course.color} text-white text-xs p-2 rounded shadow-sm cursor-pointer hover:shadow-md transition-shadow`}
                               style={{
                                 top: `${getTimePosition(course.startTime)}px`,
                                 height: `${getCourseDuration(course.startTime, course.endTime)}px`,
+                                width: `calc(100% / ${layoutByDay[day][course.courseID]?.total || 1})`,
+                                left: `calc(${layoutByDay[day][course.courseID]?.index || 0} * 100% / ${layoutByDay[day][course.courseID]?.total || 1})`,
                               }}
                               onClick={() => removeFromSchedule(course.courseID)}
                               title="Click to remove from schedule"
