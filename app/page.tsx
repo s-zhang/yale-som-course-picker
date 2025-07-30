@@ -1142,7 +1142,7 @@ export default function SOMCourse() {
                     className="grid grid-cols-6 border-b"
                     style={{ gridTemplateColumns: 'max-content repeat(5, 1fr)' }}
                   >
-                    <div className="border-r bg-gray-50 px-2 py-1">
+                    <div className="border-r bg-gray-50 px-2 py-1 text-xs whitespace-nowrap">
                       <span className="invisible">{maxTimeLabel}</span>
                     </div>
                     {DAYS.map((day, i) => (
