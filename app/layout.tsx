@@ -11,9 +11,12 @@ const inter = Inter({
 })
 
 export const metadata: Metadata = {
-  title: "Yale SOM Course Table",
+  title: "SOM Course Picker",
   description: "Course selection website for Yale School of Management",
   generator: "v0.dev",
+  icons: {
+    icon: "https://som.yale.edu/themes/custom/som/images/favicons/favicon.ico",
+  },
 }
 
 export default function RootLayout({

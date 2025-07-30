@@ -422,7 +422,7 @@ const getProgramCohortBadgeClass = (color: string): string => {
   return colorMap[color.toLowerCase()] || "bg-gray-500 hover:bg-gray-500 text-white border-0"
 }
 
-// Add this function before the CourseTable component
+// Add this function before the SOMCourse component
 const getCurrentAndNextSemesters = (): string[] => {
   const now = new Date()
   const currentYear = now.getFullYear()
@@ -521,7 +521,7 @@ const ExpandableTableCell = ({ text }: { text: string }) => {
   )
 }
 
-export default function CourseTable() {
+export default function SOMCourse() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [initialScheduledIds, setInitialScheduledIds] = useState<string[]>([])
@@ -535,7 +535,7 @@ export default function CourseTable() {
   const [selectedInstructors, setSelectedInstructors] = useState<string[]>([])
   const [selectedUnits, setSelectedUnits] = useState<string[]>([])
   const [selectedProgramCohorts, setSelectedProgramCohorts] = useState<string[]>(["Elective"])
-  // In the CourseTable component, add a new state to track expanded descriptions
+  // In the SOMCourse component, add a new state to track expanded descriptions
   const categories = React.useMemo(() => {
     const categorySet = new Set<string>()
     courses.forEach((course) => {
@@ -887,8 +887,8 @@ export default function CourseTable() {
       <header className="bg-white border-b border-gray-200 px-6 py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
-            <h1 className="text-2xl font-bold text-blue-600">
-              Course<span className="text-gray-900">Table</span>
+            <h1 className="text-2xl font-bold text-gray-900">
+              <span className="text-[#000f9f]">SOM</span>Course
             </h1>
           </div>
         </div>
