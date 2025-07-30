@@ -763,10 +763,10 @@ export default function SOMCourse() {
   const [timeColumnWidth, setTimeColumnWidth] = React.useState<number>()
 
   React.useLayoutEffect(() => {
-    if (timeColumnRef.current) {
+    if (activeTab === "calendar" && timeColumnRef.current) {
       setTimeColumnWidth(timeColumnRef.current.getBoundingClientRect().width)
     }
-  }, [timeSlots])
+  }, [activeTab, timeSlots])
 
   const scheduleStartMinutes = React.useMemo(
     () => parseTimeToMinutes(timeSlots[0] ?? "8:00 AM"),
