@@ -534,7 +534,7 @@ export default function SOMCourse() {
   const [selectedSessions, setSelectedSessions] = useState<string[]>([])
   const [selectedInstructors, setSelectedInstructors] = useState<string[]>([])
   const [selectedUnits, setSelectedUnits] = useState<string[]>([])
-  const [selectedProgramCohorts, setSelectedProgramCohorts] = useState<string[]>(["Elective"])
+  const [selectedProgramCohorts, setSelectedProgramCohorts] = useState<string[]>([])
   // In the SOMCourse component, add a new state to track expanded descriptions
   const categories = React.useMemo(() => {
     const categorySet = new Set<string>()
@@ -584,6 +584,7 @@ export default function SOMCourse() {
 
   // Initialize state from query parameters
   useEffect(() => {
+    const hasParams = searchParams.toString().length > 0
     const cats = searchParams.get("categories")
     if (cats) setSelectedCategories(cats.split(",").filter(Boolean))
     const sess = searchParams.get("sessions")
@@ -593,7 +594,11 @@ export default function SOMCourse() {
     const unitsParam = searchParams.get("units")
     if (unitsParam) setSelectedUnits(unitsParam.split(",").filter(Boolean))
     const pc = searchParams.get("programs")
-    if (pc) setSelectedProgramCohorts(pc.split(",").filter(Boolean))
+    if (hasParams) {
+      if (pc) setSelectedProgramCohorts(pc.split(",").filter(Boolean))
+    } else {
+      setSelectedProgramCohorts(["Elective"])
+    }
     const search = searchParams.get("search")
     if (search) setSearchTerm(search)
     const sched = searchParams.get("scheduled")
