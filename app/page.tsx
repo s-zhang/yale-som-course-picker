@@ -984,27 +984,33 @@ export default function SOMCourse() {
                           <TableCell>{course.room}</TableCell>
                           <TableCell>{course.units}</TableCell>
                           <TableCell>
-                            <div className="flex flex-col space-y-1">
-                              {course.syllabusUrl && (
-                                <a
-                                  href={course.syllabusUrl}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="text-blue-600 hover:underline"
-                                >
-                                  Syllabus
-                                </a>
-                              )}
-                              {course.oldSyllabusUrl && (
-                                <a
-                                  href={course.oldSyllabusUrl}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="text-blue-600 hover:underline"
-                                >
-                                  Old Syllabus
-                                </a>
-                              )}
+                            <div>
+                              {course.syllabusUrl || course.oldSyllabusUrl ? (
+                                <span>
+                                  {course.syllabusUrl && (
+                                    <a
+                                      href={course.syllabusUrl}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="underline"
+                                    >
+                                      link
+                                    </a>
+                                  )}
+                                  {course.syllabusUrl && course.oldSyllabusUrl &&
+                                    ', '}
+                                  {course.oldSyllabusUrl && (
+                                    <a
+                                      href={course.oldSyllabusUrl}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="underline"
+                                    >
+                                      old
+                                    </a>
+                                  )}
+                                </span>
+                              ) : null}
                             </div>
                           </TableCell>
                           <TableCell>
