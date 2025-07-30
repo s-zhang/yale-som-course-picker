@@ -668,7 +668,11 @@ export default function SOMCourse() {
       return
     }
 
-    const color = COLORS[scheduledCourses.length % COLORS.length]
+    const usedColors = new Set(scheduledCourses.map((c) => c.color))
+    const color =
+      COLORS.find((c) => !usedColors.has(c)) ??
+      COLORS[scheduledCourses.length % COLORS.length]
+
     const scheduledCourse: ScheduledCourse = { ...course, color }
     setScheduledCourses([...scheduledCourses, scheduledCourse])
   }
