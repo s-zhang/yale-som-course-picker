@@ -7,10 +7,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
-import { Plus, Download, Calendar, List, Search, ChevronDown, X } from "lucide-react"
+import { Plus, Download, Calendar, TableIcon, Search, ChevronDown, X, Minus } from "lucide-react"
 import { toast } from "@/hooks/use-toast"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Checkbox } from "@/components/ui/checkbox"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 
 interface Instructor {
   name: string
@@ -499,12 +500,30 @@ const ExpandableDescription = ({ text }: { text: string }) => {
   )
 }
 
+const ExpandableTableCell = ({ text }: { text: string }) => {
+  const [isExpanded, setIsExpanded] = useState(false)
+  const isLongEnough = text && text.length > 100
+
+  if (!isLongEnough) {
+    return <p className="text-sm text-gray-600">{text || ""}</p>
+  }
+
+  return (
+    <div className="w-64">
+      <p className={`text-sm text-gray-600 ${!isExpanded ? "line-clamp-2" : ""}`}>{text}</p>
+      <button onClick={() => setIsExpanded(!isExpanded)} className="text-blue-600 text-sm underline mt-1">
+        {isExpanded ? "(less)" : "(more)"}
+      </button>
+    </div>
+  )
+}
+
 export default function CourseTable() {
   const [courses, setCourses] = useState<Course[]>([])
   const [scheduledCourses, setScheduledCourses] = useState<ScheduledCourse[]>([])
   const [searchTerm, setSearchTerm] = useState("")
   const [loading, setLoading] = useState(true)
-  const [activeTab, setActiveTab] = useState("list")
+  const [activeTab, setActiveTab] = useState("table")
   const [selectedCategories, setSelectedCategories] = useState<string[]>([])
   const [selectedSessions, setSelectedSessions] = useState<string[]>([])
   const [selectedInstructors, setSelectedInstructors] = useState<string[]>([])
@@ -598,30 +617,16 @@ export default function CourseTable() {
 
   const addToSchedule = (course: Course) => {
     if (scheduledCourses.find((c) => c.courseID === course.courseID)) {
-      toast({
-        title: "Course already added",
-        description: "This course is already in your schedule.",
-        variant: "destructive",
-      })
       return
     }
 
     const color = COLORS[scheduledCourses.length % COLORS.length]
     const scheduledCourse: ScheduledCourse = { ...course, color }
     setScheduledCourses([...scheduledCourses, scheduledCourse])
-
-    toast({
-      title: "Course added",
-      description: `${course.courseNumber} has been added to your schedule.`,
-    })
   }
 
   const removeFromSchedule = (courseID: string) => {
     setScheduledCourses(scheduledCourses.filter((c) => c.courseID !== courseID))
-    toast({
-      title: "Course removed",
-      description: "Course has been removed from your schedule.",
-    })
   }
 
   const exportToICS = () => {
@@ -739,7 +744,7 @@ export default function CourseTable() {
     selectedProgramCohorts.length > 0 ||
     searchTerm.length > 0
 
-  const renderCourseCard = (course: Course | ScheduledCourse, isScheduled = false) => {
+  const renderCourseCard = (course: Course) => {
     const details: React.ReactNode[] = []
 
     if (course.instructors && course.instructors.length > 0) {
@@ -793,12 +798,13 @@ export default function CourseTable() {
       )
     }
 
+    const isScheduled = scheduledCourses.some((c) => c.courseID === course.courseID)
+
     return (
       <Card key={`${course.courseID}-${course.termCode || "unknown"}`} className="hover:shadow-md transition-shadow">
         <CardContent className="p-4">
           <div className="flex items-start justify-between">
             <div className="flex items-start space-x-3 flex-1">
-              {isScheduled && <div className={`w-4 h-4 rounded mt-1 ${(course as ScheduledCourse).color}`}></div>}
               <div className="flex-1">
                 <div className="flex items-center space-x-3 mb-2 flex-wrap">
                   <h3 className="font-semibold text-lg">{course.courseNumber}</h3>
@@ -827,20 +833,19 @@ export default function CourseTable() {
                 </div>
               </div>
             </div>
-            {isScheduled ? (
-              <Button onClick={() => removeFromSchedule(course.courseID)} variant="outline" size="sm" className="ml-4">
-                Remove
-              </Button>
-            ) : (
-              <Button
-                onClick={() => addToSchedule(course)}
-                size="sm"
-                className="ml-4"
-                disabled={scheduledCourses.some((c) => c.courseID === course.courseID)}
-              >
-                <Plus className="w-4 h-4" />
-              </Button>
-            )}
+            <Button
+              onClick={() => {
+                if (isScheduled) {
+                  removeFromSchedule(course.courseID)
+                } else {
+                  addToSchedule(course)
+                }
+              }}
+              size="icon"
+              className="ml-4 h-8 w-8 flex-shrink-0"
+            >
+              {isScheduled ? <Minus className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
+            </Button>
           </div>
         </CardContent>
       </Card>
@@ -881,9 +886,9 @@ export default function CourseTable() {
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <div className="flex justify-center mb-4">
               <TabsList>
-                <TabsTrigger value="list" className="flex items-center">
-                  <List className="w-4 h-4 mr-2" />
-                  List
+                <TabsTrigger value="table" className="flex items-center">
+                  <TableIcon className="w-4 h-4 mr-2" />
+                  Table
                 </TabsTrigger>
                 <TabsTrigger value="calendar" className="flex items-center">
                   <Calendar className="w-4 h-4 mr-2" />
@@ -892,14 +897,97 @@ export default function CourseTable() {
               </TabsList>
             </div>
 
-            <TabsContent value="list" className="space-y-4">
-              {scheduledCourses.length === 0 ? (
-                <Card className="p-8 text-center text-gray-500">
-                  <p>No courses selected yet. Add courses from the list below.</p>
-                </Card>
-              ) : (
-                <div className="space-y-2">{scheduledCourses.map((course) => renderCourseCard(course, true))}</div>
-              )}
+            <TabsContent value="table">
+              <Card>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-12"></TableHead>
+                      <TableHead>Number</TableHead>
+                      <TableHead>Title</TableHead>
+                      <TableHead>Session</TableHead>
+                      <TableHead>Category</TableHead>
+                      <TableHead>Instructor(s)</TableHead>
+                      <TableHead>Meets</TableHead>
+                      <TableHead>Location</TableHead>
+                      <TableHead>Units</TableHead>
+                      <TableHead>Syllabus</TableHead>
+                      <TableHead>Description</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {scheduledCourses.length > 0 ? (
+                      scheduledCourses.map((course) => (
+                        <TableRow key={course.courseID}>
+                          <TableCell>
+                            <Button
+                              onClick={() => removeFromSchedule(course.courseID)}
+                              size="icon"
+                              title="Remove course"
+                              className={`${course.color} h-6 w-6 text-white hover:opacity-90 focus-visible:ring-offset-0 focus-visible:ring-2 focus-visible:ring-ring`}
+                            >
+                              <Minus className="h-4 w-4" />
+                            </Button>
+                          </TableCell>
+                          <TableCell>{course.courseNumber}</TableCell>
+                          <TableCell className="font-medium">{course.courseTitle}</TableCell>
+                          <TableCell>{course.courseSession}</TableCell>
+                          <TableCell>{course.courseCategories.join(", ")}</TableCell>
+                          <TableCell>
+                            {course.instructors.map((instructor) => (
+                              <div key={instructor.email}>
+                                <a
+                                  href={`mailto:${instructor.email}`}
+                                  className="text-gray-600 hover:underline"
+                                  title={`Email ${instructor.name}`}
+                                >
+                                  {instructor.name}
+                                </a>
+                              </div>
+                            ))}
+                          </TableCell>
+                          <TableCell>{course.daysTimes}</TableCell>
+                          <TableCell>{course.room}</TableCell>
+                          <TableCell>{course.units}</TableCell>
+                          <TableCell>
+                            <div className="flex flex-col space-y-1">
+                              {course.syllabusUrl && (
+                                <a
+                                  href={course.syllabusUrl}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-blue-600 hover:underline"
+                                >
+                                  Syllabus
+                                </a>
+                              )}
+                              {course.oldSyllabusUrl && (
+                                <a
+                                  href={course.oldSyllabusUrl}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-blue-600 hover:underline"
+                                >
+                                  Old Syllabus
+                                </a>
+                              )}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <ExpandableTableCell text={course.courseDescription} />
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    ) : (
+                      <TableRow>
+                        <TableCell colSpan={11} className="h-24 text-center">
+                          No courses selected yet. Add courses from the list below.
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </Card>
             </TabsContent>
 
             <TabsContent value="calendar">
@@ -1023,7 +1111,7 @@ export default function CourseTable() {
             <div className="text-center py-8">Loading courses...</div>
           ) : (
             <div className="space-y-2 max-h-96 overflow-y-auto">
-              {filteredCourses.map((course) => renderCourseCard(course, false))}
+              {filteredCourses.map((course) => renderCourseCard(course))}
               {filteredCourses.length === 0 && !loading && (
                 <Card className="p-8 text-center text-gray-500">
                   <p>No courses found matching your search.</p>
