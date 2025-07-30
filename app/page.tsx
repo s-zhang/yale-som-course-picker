@@ -12,6 +12,7 @@ import { toast } from "@/hooks/use-toast"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { generateICS } from "@/lib/ics"
 
 interface Instructor {
   name: string
@@ -630,56 +631,7 @@ export default function CourseTable() {
   }
 
   const exportToICS = () => {
-    let icsContent = "BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//Yale SOM//Course Schedule//EN\n"
-
-    scheduledCourses.forEach((course) => {
-      if (course.meetingDays.length > 0 && course.startTime && course.endTime) {
-        try {
-          // Parse dates more carefully - handle format like "20250121 000000.000"
-          let startDate: Date | null = null
-          let endDate: Date | null = null
-
-          if (course.courseSessionStartDate) {
-            // Extract just the date part (first 8 characters) and format as YYYY-MM-DD
-            const startDateStr = course.courseSessionStartDate.substring(0, 8)
-            if (startDateStr.length === 8) {
-              const year = startDateStr.substring(0, 4)
-              const month = startDateStr.substring(4, 6)
-              const day = startDateStr.substring(6, 8)
-              startDate = new Date(`${year}-${month}-${day}`)
-            }
-          }
-
-          if (course.courseSessionEndDate) {
-            // Extract just the date part (first 8 characters) and format as YYYY-MM-DD
-            const endDateStr = course.courseSessionEndDate.substring(0, 8)
-            if (endDateStr.length === 8) {
-              const year = endDateStr.substring(0, 4)
-              const month = endDateStr.substring(4, 6)
-              const day = endDateStr.substring(6, 8)
-              endDate = new Date(`${year}-${month}-${day}`)
-            }
-          }
-
-          // Only add event if we have valid dates
-          if (startDate && endDate && !isNaN(startDate.getTime()) && !isNaN(endDate.getTime())) {
-            icsContent += "BEGIN:VEVENT\n"
-            icsContent += `SUMMARY:${course.courseNumber} - ${course.courseTitle}\n`
-            icsContent += `DESCRIPTION:${course.courseDescription.replace(/\n/g, "\\n")}\n`
-            icsContent += `LOCATION:${course.room}\n`
-            icsContent += `DTSTART:${startDate.toISOString().replace(/[-:]/g, "").split(".")[0]}Z\n`
-            icsContent += `DTEND:${endDate.toISOString().replace(/[-:]/g, "").split(".")[0]}Z\n`
-            icsContent += `UID:${course.courseID}@som.yale.edu\n`
-            icsContent += "END:VEVENT\n"
-          }
-        } catch (error) {
-          console.error(`Error processing course ${course.courseNumber}:`, error)
-          // Continue with other courses even if one fails
-        }
-      }
-    })
-
-    icsContent += "END:VCALENDAR"
+    const icsContent = generateICS(scheduledCourses)
 
     const blob = new Blob([icsContent], { type: "text/calendar" })
     const url = URL.createObjectURL(blob)
