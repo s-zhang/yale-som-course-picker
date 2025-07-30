@@ -1,8 +1,8 @@
 import type React from "react"
 
-export default function Footer() {
+export default function Header() {
   return (
-    <footer className="py-4 text-center text-sm text-muted-foreground">
+    <header className="py-2 text-center text-sm text-muted-foreground">
       Made by{' '}
       <a
         href="https://www.linkedin.com/in/pingshan-zhang"
@@ -22,6 +22,6 @@ export default function Footer() {
         starring this repo on GitHub
       </a>
       .
-    </footer>
+    </header>
   )
 }
