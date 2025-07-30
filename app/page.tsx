@@ -711,18 +711,18 @@ export default function SOMCourse() {
 
   const filteredCourses = courses.filter(
     (course) =>
-      (course.courseTitle.toLowerCase().includes(lowerSearch) ||
-        course.courseNumber.toLowerCase().includes(lowerSearch) ||
-        course.courseDescription.toLowerCase().includes(lowerSearch) ||
-        course.courseCategories.some((cat) => cat.toLowerCase().includes(lowerSearch)) ||
-        course.instructors.some((instructor) => instructor.name.toLowerCase().includes(lowerSearch))) &&
-      (selectedCategories.length === 0 || course.courseCategories.some((cat) => selectedCategories.includes(cat))) &&
+      ((course.courseTitle || "").toLowerCase().includes(lowerSearch) ||
+        (course.courseNumber || "").toLowerCase().includes(lowerSearch) ||
+        (course.courseDescription || "").toLowerCase().includes(lowerSearch) ||
+        (course.courseCategories || []).some((cat) => (cat || "").toLowerCase().includes(lowerSearch)) ||
+        (course.instructors || []).some((instructor) => (instructor.name || "").toLowerCase().includes(lowerSearch))) &&
+      (selectedCategories.length === 0 || (course.courseCategories || []).some((cat) => selectedCategories.includes(cat))) &&
       (selectedSessions.length === 0 || selectedSessions.includes(course.courseSession)) &&
       (selectedInstructors.length === 0 ||
-        course.instructors.some((instructor) => selectedInstructors.includes(instructor.name))) &&
+        (course.instructors || []).some((instructor) => selectedInstructors.includes(instructor.name))) &&
       (selectedUnits.length === 0 || selectedUnits.includes(course.units)) &&
       (selectedProgramCohorts.length === 0 ||
-        course.programCohorts.some((pc) => selectedProgramCohorts.includes(pc.name))),
+        (course.programCohorts || []).some((pc) => selectedProgramCohorts.includes(pc.name))),
   )
 
   const getTimePosition = (time: string) => {
