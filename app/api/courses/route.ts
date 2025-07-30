@@ -47,8 +47,9 @@ export async function GET(request: Request) {
   } catch (error) {
     console.error("Error fetching courses:", error)
     // Return an empty array on failure instead of sample data
-    return NextResponse.json({
-      courses: [],
-    })
+    return NextResponse.json(
+      { courses: [], error: "Failed to fetch courses" },
+      { status: 500 }
+    )
   }
 }

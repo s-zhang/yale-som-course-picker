@@ -1,5 +1,8 @@
 # Yale SOM Course Picker
 
+[![Deployed on Vercel](https://img.shields.io/badge/Deployed%20on-Vercel-black?style=for-the-badge&logo=vercel)](https://vercel.com/personal-18b67004/v0-yale-som-course-picker)
+[![Built with v0](https://img.shields.io/badge/Built%20with-v0.dev-black?style=for-the-badge)](https://v0.dev/chat/projects/AX0giZiARrv)
+
 Yale SOM Course Picker is a scheduling tool for browsing and organizing courses offered at the Yale School of Management. It is built with Next.js and React and includes an interactive calendar view for planning your semester.
 
 ## Features
