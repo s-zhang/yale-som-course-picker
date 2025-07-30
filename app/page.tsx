@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
 import { Plus, Download, Calendar, TableIcon, Search, ChevronDown, X, Minus } from "lucide-react"
+import Spinner from "@/components/ui/spinner"
 import { toast } from "@/hooks/use-toast"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -1108,7 +1109,9 @@ export default function CourseTable() {
           </div>
 
           {loading ? (
-            <div className="text-center py-8">Loading courses...</div>
+            <div className="flex justify-center py-8">
+              <Spinner className="h-6 w-6 text-muted-foreground" />
+            </div>
           ) : (
             <div className="space-y-2 max-h-96 overflow-y-auto">
               {filteredCourses.map((course) => renderCourseCard(course))}
