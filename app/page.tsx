@@ -1163,7 +1163,10 @@ export default function SOMCourse() {
 
                   <div
                     className="grid grid-cols-6 relative"
-                    style={{ minHeight: '400px', gridTemplateColumns: 'auto repeat(5, 1fr)' }}
+                    style={{
+                      height: `${timeSlots.length * TIME_SLOT_HEIGHT}px`,
+                      gridTemplateColumns: 'auto repeat(5, 1fr)'
+                    }}
                   >
                     <div className="border-r bg-gray-50" ref={timeColumnRef}>
                       {timeSlots.map((time) => (
