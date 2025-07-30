@@ -6,7 +6,7 @@ on:
       - main
 
 jobs:
-  build:
+  deploy:
     runs-on: ubuntu-latest
     environment: Production
     steps:
@@ -19,6 +19,7 @@ jobs:
           node-version: 20
           cache: 'pnpm'
       - run: pnpm install
+      - run: pnpm exec vitest run
       - run: npx vercel pull --yes --environment=production --token ${{ secrets.VERCEL_TOKEN }}
       - run: npx vercel build --prod --token ${{ secrets.VERCEL_TOKEN }}
       - run: npx vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }}
