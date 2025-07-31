@@ -1004,12 +1004,23 @@ export default function SOMCourse() {
             <span className="text-[#000f9f]">SOM</span>Course
           </h1>
           <div className="flex items-center space-x-2">
-            <Button onClick={exportToICS} variant="outline" size="sm" disabled={scheduledCourses.length === 0}>
-              <Download className="w-4 h-4 mr-2" />
+            <Button
+              onClick={exportToICS}
+              variant="outline"
+              size="sm"
+              className="w-9 px-0 sm:w-auto sm:px-3"
+              disabled={scheduledCourses.length === 0}
+            >
+              <Download className="w-4 h-4 sm:mr-2" />
               <span className="hidden sm:inline">Export ICS</span>
             </Button>
-            <Button onClick={shareSchedule} variant="outline" size="sm">
-              <Share2 className="w-4 h-4 mr-2" />
+            <Button
+              onClick={shareSchedule}
+              variant="outline"
+              size="sm"
+              className="w-9 px-0 sm:w-auto sm:px-3"
+            >
+              <Share2 className="w-4 h-4 sm:mr-2" />
               <span className="hidden sm:inline">Share</span>
             </Button>
           </div>
