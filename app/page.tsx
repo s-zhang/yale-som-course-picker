@@ -1007,7 +1007,6 @@ export default function SOMCourse() {
               variant="outline"
               size="sm"
               className="w-9 px-0 sm:w-auto sm:px-3"
-              disabled={scheduledCourses.length === 0}
             >
               <Download className="w-4 h-4 sm:mr-2" />
               <span className="hidden sm:inline">Export ICS</span>
