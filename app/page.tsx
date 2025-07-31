@@ -442,13 +442,13 @@ const getProgramCohortBadgeClass = (color: string): string => {
   }
 
   const colorMap: { [key: string]: string } = {
-    blue: "bg-blue-500 hover:bg-blue-500 text-white border-0",
-    green: "bg-green-500 hover:bg-green-500 text-white border-0",
-    red: "bg-red-500 hover:bg-red-500 text-white border-0",
-    gold: "bg-yellow-500 hover:bg-yellow-500 text-white border-0",
-    silver: "bg-gray-400 hover:bg-gray-400 text-white border-0",
-    orange: "bg-orange-500 hover:bg-orange-500 text-white border-0",
-    purple: "bg-purple-500 hover:bg-purple-500 text-white border-0",
+    blue: "bg-blue-300 hover:bg-blue-300 text-white border-0",
+    green: "bg-green-300 hover:bg-green-300 text-white border-0",
+    red: "bg-red-300 hover:bg-red-300 text-white border-0",
+    gold: "bg-yellow-300 hover:bg-yellow-300 text-white border-0",
+    silver: "bg-gray-300 hover:bg-gray-300 text-white border-0",
+    orange: "bg-orange-300 hover:bg-orange-300 text-white border-0",
+    purple: "bg-purple-300 hover:bg-purple-300 text-white border-0",
   }
   return colorMap[color.toLowerCase()] || "bg-gray-500 hover:bg-gray-500 text-white border-0"
 }
