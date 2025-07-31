@@ -10,6 +10,7 @@ Yale SOM Course Picker is a scheduling tool for browsing and organizing courses 
 - Fetch course information from the SOM course API
 - Filter by semester and program
 - Add courses to a personal schedule view
+- Track usage anonymously via Vercel Web Analytics
 
 ## Getting Started
 
