@@ -984,7 +984,9 @@ export default function SOMCourse() {
                 }
               }}
               size="icon"
-              className="ml-4 h-8 w-8 flex-shrink-0"
+              className={`ml-4 h-8 w-8 flex-shrink-0 ${
+                isScheduled ? '' : 'bg-[#000f9f] text-white hover:bg-[#000f9f]/90'
+              }`}
             >
               {isScheduled ? <Minus className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
             </Button>
