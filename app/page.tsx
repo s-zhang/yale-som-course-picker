@@ -442,13 +442,20 @@ const getProgramCohortBadgeClass = (color: string): string => {
   }
 
   const colorMap: { [key: string]: string } = {
-    blue: "bg-blue-300 hover:bg-blue-300 text-white border-0",
-    green: "bg-green-300 hover:bg-green-300 text-white border-0",
-    red: "bg-red-300 hover:bg-red-300 text-white border-0",
-    gold: "bg-yellow-300 hover:bg-yellow-300 text-white border-0",
-    silver: "bg-gray-300 hover:bg-gray-300 text-white border-0",
-    orange: "bg-orange-300 hover:bg-orange-300 text-white border-0",
-    purple: "bg-purple-300 hover:bg-purple-300 text-white border-0",
+    gold:
+      "border border-[rgb(236_191_66_/_39%)] bg-[rgb(251_243_219)] hover:bg-[rgb(251_243_219)] text-black hover:text-black",
+    purple:
+      "border border-[rgb(168_129_197_/_27%)] bg-[rgb(248_243_252)] hover:bg-[rgb(248_243_252)] text-black hover:text-black",
+    blue:
+      "border border-[rgb(93_165_206_/_27%)] bg-[rgb(231_243_248)] hover:bg-[rgb(231_243_248)] text-black hover:text-black",
+    orange:
+      "border border-[rgb(224_124_57_/_27%)] bg-[rgb(251_236_221)] hover:bg-[rgb(251_236_221)] text-black hover:text-black",
+    red:
+      "border border-[rgb(244_171_159_/_40%)] bg-[rgb(253_235_236)] hover:bg-[rgb(253_235_236)] text-black hover:text-black",
+    green:
+      "border border-[rgb(123_183_129_/_27%)] bg-[rgb(237_243_236)] hover:bg-[rgb(237_243_236)] text-black hover:text-black",
+    silver:
+      "border border-[rgb(84_72_49_/_15%)] bg-[rgb(248_248_247)] hover:bg-[rgb(248_248_247)] text-black hover:text-black",
   }
   return colorMap[color.toLowerCase()] || "bg-gray-500 hover:bg-gray-500 text-white border-0"
 }
