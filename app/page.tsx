@@ -118,7 +118,7 @@ const DEFAULT_TIME_SLOTS = [
   "10:00 PM",
 ]
 
-const TIME_SLOT_HEIGHT = 20 // px per 30 minute slot
+const TIME_SLOT_HEIGHT = 40 // px per 30 minute slot
 
 const parseTimeToMinutes = (time: string): number => {
   const [timeStr, period] = time.split(" ")
@@ -1169,7 +1169,7 @@ export default function SOMCourse() {
                   >
                     <div className="border-r bg-gray-50" style={{ width: 70 }}>
                       {timeSlots.map((time) => (
-                        <div key={time} className="h-5 border-b text-xs text-gray-500 px-2 py-1 whitespace-nowrap">
+                        <div key={time} className="h-10 border-b text-xs text-gray-500 px-2 py-1 whitespace-nowrap">
                           {time}
                         </div>
                       ))}
@@ -1178,7 +1178,7 @@ export default function SOMCourse() {
                     {DAYS.map((day) => (
                       <div key={day} className="border-r last:border-r-0 relative">
                         {timeSlots.map((time) => (
-                          <div key={time} className="h-5 border-b border-gray-100"></div>
+                          <div key={time} className="h-10 border-b border-gray-100"></div>
                         ))}
 
                         {scheduledCourses
