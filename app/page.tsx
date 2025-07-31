@@ -15,6 +15,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Checkbox } from "@/components/ui/checkbox"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { generateICS } from "@/lib/ics"
+import { capitalize } from "@/lib/utils"
 
 interface Instructor {
   name: string
@@ -270,7 +271,9 @@ const processCourseData = (course: any): Course => {
   return {
     ...course,
     termCode: course.termCode || "unknown",
-    courseSession: course.courseSession?.trim() || course.courseSession,
+    courseSession: course.courseSession
+      ? capitalize(course.courseSession.trim())
+      : course.courseSession,
     courseCategories: categories,
     instructors: instructors,
     meetingDays: meetingDays,
@@ -616,7 +619,7 @@ export default function SOMCourse() {
     const cats = searchParams.get("categories")
     if (cats) setSelectedCategories(cats.split(",").filter(Boolean))
     const sess = searchParams.get("sessions")
-    if (sess) setSelectedSessions(sess.split(",").filter(Boolean))
+    if (sess) setSelectedSessions(sess.split(",").filter(Boolean).map(capitalize))
     const instr = searchParams.get("instructors")
     if (instr) setSelectedInstructors(instr.split(",").filter(Boolean))
     const unitsParam = searchParams.get("units")
