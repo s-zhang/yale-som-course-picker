@@ -118,7 +118,7 @@ const DEFAULT_TIME_SLOTS = [
   "10:00 PM",
 ]
 
-const TIME_SLOT_HEIGHT = 40 // px per 30 minute slot
+const TIME_SLOT_HEIGHT = 20 // px per 30 minute slot
 
 const parseTimeToMinutes = (time: string): number => {
   const [timeStr, period] = time.split(" ")
@@ -767,11 +767,6 @@ export default function SOMCourse() {
     return slots
   }, [scheduledCourses])
 
-  const maxTimeLabel = React.useMemo(
-    () => timeSlots.reduce((max, t) => (t.length > max.length ? t : max), ""),
-    [timeSlots],
-  )
-
   const scheduleStartMinutes = React.useMemo(
     () => parseTimeToMinutes(timeSlots[0] ?? "8:00 AM"),
     [timeSlots]
@@ -1150,9 +1145,10 @@ export default function SOMCourse() {
                     className="grid grid-cols-6 border-b"
                     style={{ gridTemplateColumns: 'max-content repeat(5, 1fr)' }}
                   >
-                    <div className="border-r bg-gray-50 px-2 py-1 text-xs whitespace-nowrap">
-                      <span className="invisible">{maxTimeLabel}</span>
-                    </div>
+                    <div
+                      className="border-r bg-gray-50 px-2 py-1 text-xs whitespace-nowrap"
+                      style={{ width: 70 }}
+                    />
                     {DAYS.map((day, i) => (
                       <div
                         key={day}
@@ -1171,9 +1167,9 @@ export default function SOMCourse() {
                       gridTemplateColumns: 'max-content repeat(5, 1fr)'
                     }}
                   >
-                    <div className="border-r bg-gray-50">
+                    <div className="border-r bg-gray-50" style={{ width: 70 }}>
                       {timeSlots.map((time) => (
-                        <div key={time} className="h-10 border-b text-xs text-gray-500 px-2 py-1 whitespace-nowrap">
+                        <div key={time} className="h-5 border-b text-xs text-gray-500 px-2 py-1 whitespace-nowrap">
                           {time}
                         </div>
                       ))}
@@ -1182,7 +1178,7 @@ export default function SOMCourse() {
                     {DAYS.map((day) => (
                       <div key={day} className="border-r last:border-r-0 relative">
                         {timeSlots.map((time) => (
-                          <div key={time} className="h-10 border-b border-gray-100"></div>
+                          <div key={time} className="h-5 border-b border-gray-100"></div>
                         ))}
 
                         {scheduledCourses
