@@ -1006,11 +1006,11 @@ export default function SOMCourse() {
           <div className="flex items-center space-x-2">
             <Button onClick={exportToICS} variant="outline" size="sm" disabled={scheduledCourses.length === 0}>
               <Download className="w-4 h-4 mr-2" />
-              Export ICS
+              <span className="hidden sm:inline">Export ICS</span>
             </Button>
             <Button onClick={shareSchedule} variant="outline" size="sm">
               <Share2 className="w-4 h-4 mr-2" />
-              Share
+              <span className="hidden sm:inline">Share</span>
             </Button>
           </div>
         </div>
