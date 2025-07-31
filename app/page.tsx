@@ -453,7 +453,6 @@ const getProgramCohortBadgeClass = (color: string): string => {
   return colorMap[color.toLowerCase()] || "bg-gray-500 hover:bg-gray-500 text-white border-0"
 }
 
-// Add this function before the SOMCourse component
 const getCurrentAndNextSemesters = (): string[] => {
   const now = new Date()
   const currentYear = now.getFullYear()
@@ -984,7 +983,7 @@ export default function SOMCourse() {
                 }
               }}
               size="icon"
-              className="ml-4 h-8 w-8 flex-shrink-0"
+              className="ml-4 h-8 w-8 flex-shrink-0 bg-[#000f9f] text-white hover:bg-[#000f9f]/90"
             >
               {isScheduled ? <Minus className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
             </Button>
