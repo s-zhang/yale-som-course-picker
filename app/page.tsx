@@ -731,7 +731,11 @@ export default function SOMCourse() {
   const shareSchedule = async () => {
     try {
       await navigator.clipboard.writeText(window.location.href)
-      toast({ title: "URL Copied", description: "Share this link with others." })
+      toast({
+        title: "Link copied",
+        description:
+          "This link will bring up the same classes you selected. Share it with friends or save it for yourself!",
+      })
     } catch (err) {
       toast({
         title: "Error",
