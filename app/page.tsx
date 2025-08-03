@@ -566,7 +566,7 @@ export default function SOMCourse() {
   const [scheduledCourses, setScheduledCourses] = useState<ScheduledCourse[]>([])
   const [searchTerm, setSearchTerm] = useState("")
   const [loading, setLoading] = useState(true)
-  const [activeTab, setActiveTab] = useState("table")
+  const [activeTab, setActiveTab] = useState("calendar")
   const [selectedCategories, setSelectedCategories] = useState<string[]>([])
   const [selectedSessions, setSelectedSessions] = useState<string[]>([])
   const [selectedInstructors, setSelectedInstructors] = useState<string[]>([])
@@ -1005,7 +1005,7 @@ export default function SOMCourse() {
       <header className="bg-white border-b border-gray-200 px-6 py-4">
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-bold text-gray-900">
-            <span className="text-[#000f9f]">SOM</span>Course
+            My<span className="text-[#000f9f]">SOM</span>Classes
           </h1>
           <div className="flex items-center space-x-2">
             <Button
@@ -1043,13 +1043,13 @@ export default function SOMCourse() {
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <div className="flex justify-center mb-4">
               <TabsList>
-                <TabsTrigger value="table" className="flex items-center">
-                  <TableIcon className="w-4 h-4 mr-2" />
-                  Table
-                </TabsTrigger>
                 <TabsTrigger value="calendar" className="flex items-center">
                   <Calendar className="w-4 h-4 mr-2" />
                   Calendar
+                </TabsTrigger>
+                <TabsTrigger value="table" className="flex items-center">
+                  <TableIcon className="w-4 h-4 mr-2" />
+                  Table
                 </TabsTrigger>
               </TabsList>
             </div>
@@ -1154,31 +1154,31 @@ export default function SOMCourse() {
             </TabsContent>
 
             <TabsContent value="calendar">
-              {scheduledCourses.length === 0 ? (
-                <Card className="p-8 text-center text-gray-500">
-                  <p>No courses selected yet. Add courses from the list below to see your schedule.</p>
-                </Card>
-              ) : (
-                <div className="bg-white rounded-lg border">
+              <div className="bg-white rounded-lg border">
+                <div
+                  className="grid grid-cols-6 border-b"
+                  style={{ gridTemplateColumns: 'max-content repeat(5, 1fr)' }}
+                >
                   <div
-                    className="grid grid-cols-6 border-b"
-                    style={{ gridTemplateColumns: 'max-content repeat(5, 1fr)' }}
-                  >
+                    className="border-r bg-gray-50 px-2 py-1 text-xs whitespace-nowrap"
+                    style={{ width: 70 }}
+                  />
+                  {DAYS.map((day, i) => (
                     <div
-                      className="border-r bg-gray-50 px-2 py-1 text-xs whitespace-nowrap"
-                      style={{ width: 70 }}
-                    />
-                    {DAYS.map((day, i) => (
-                      <div
-                        key={day}
-                        className="p-4 text-center font-medium border-r last:border-r-0"
-                      >
-                        <span className="hidden sm:inline">{day}</span>
-                        <span className="sm:hidden">{DAYS_SHORT[i]}</span>
-                      </div>
-                    ))}
-                  </div>
+                      key={day}
+                      className="p-4 text-center font-medium border-r last:border-r-0"
+                    >
+                      <span className="hidden sm:inline">{day}</span>
+                      <span className="sm:hidden">{DAYS_SHORT[i]}</span>
+                    </div>
+                  ))}
+                </div>
 
+                {scheduledCourses.length === 0 ? (
+                  <div className="p-8 text-center text-gray-500">
+                    <p>Add courses from the list below to see your schedule.</p>
+                  </div>
+                ) : (
                   <div
                     className="grid grid-cols-6 relative"
                     style={{
@@ -1228,8 +1228,8 @@ export default function SOMCourse() {
                       </div>
                     ))}
                   </div>
-                </div>
-              )}
+                )}
+              </div>
             </TabsContent>
           </Tabs>
         </div>
