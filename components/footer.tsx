@@ -11,7 +11,7 @@ export default function Footer() {
           rel="noopener noreferrer"
           className="underline"
         >
-          Pingshan Zhang, MBA '26
+            Pingshan Zhang, MBA ’26
         </a>
         .
       </span>{" "}
