@@ -732,7 +732,7 @@ export default function SOMCourse() {
     try {
       await navigator.clipboard.writeText(window.location.href)
       toast({
-        title: "Link copied!",
+        title: "Link copied",
         description:
           "This link will bring up the same classes you selected. Share it with friends or save it for yourself!",
       })
