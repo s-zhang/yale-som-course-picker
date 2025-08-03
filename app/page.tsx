@@ -566,7 +566,7 @@ export default function SOMCourse() {
   const [scheduledCourses, setScheduledCourses] = useState<ScheduledCourse[]>([])
   const [searchTerm, setSearchTerm] = useState("")
   const [loading, setLoading] = useState(true)
-  const [activeTab, setActiveTab] = useState("table")
+  const [activeTab, setActiveTab] = useState("calendar")
   const [selectedCategories, setSelectedCategories] = useState<string[]>([])
   const [selectedSessions, setSelectedSessions] = useState<string[]>([])
   const [selectedInstructors, setSelectedInstructors] = useState<string[]>([])
@@ -1005,7 +1005,7 @@ export default function SOMCourse() {
       <header className="bg-white border-b border-gray-200 px-6 py-4">
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-bold text-gray-900">
-            <span className="text-[#000f9f]">SOM</span>Course
+            My<span className="text-[#000f9f]">SOM</span>Classes
           </h1>
           <div className="flex items-center space-x-2">
             <Button
@@ -1043,13 +1043,13 @@ export default function SOMCourse() {
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <div className="flex justify-center mb-4">
               <TabsList>
-                <TabsTrigger value="table" className="flex items-center">
-                  <TableIcon className="w-4 h-4 mr-2" />
-                  Table
-                </TabsTrigger>
                 <TabsTrigger value="calendar" className="flex items-center">
                   <Calendar className="w-4 h-4 mr-2" />
                   Calendar
+                </TabsTrigger>
+                <TabsTrigger value="table" className="flex items-center">
+                  <TableIcon className="w-4 h-4 mr-2" />
+                  Table
                 </TabsTrigger>
               </TabsList>
             </div>
