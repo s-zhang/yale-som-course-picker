@@ -16,6 +16,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { generateICS } from "@/lib/ics"
 import { capitalize } from "@/lib/utils"
+import { facultyUrlFromName } from "@/lib/faculty"
 
 interface Instructor {
   name: string
@@ -900,9 +901,9 @@ export default function SOMCourse() {
         details.push(
           <a
             key={instructor.name}
-            href={`mailto:${instructor.email}`}
+            href={facultyUrlFromName(instructor.name)}
             className="text-gray-500 hover:text-gray-700 underline"
-            title={`Email ${instructor.name}`}
+            title={`View ${instructor.name}'s faculty page`}
           >
             {instructor.name}
           </a>,
@@ -1091,18 +1092,17 @@ export default function SOMCourse() {
                           <TableCell>{course.courseSession}</TableCell>
                           <TableCell>{course.courseCategories.join(", ")}</TableCell>
                           <TableCell>
-                            {course.instructors.map((instructor) => (
-                              <div key={instructor.email}>
+                              {course.instructors.map((instructor) => (
                                 <a
-                                  href={`mailto:${instructor.email}`}
-                                  className="text-gray-600 hover:underline"
-                                  title={`Email ${instructor.name}`}
+                                  key={instructor.name}
+                                  href={facultyUrlFromName(instructor.name)}
+                                  className="block text-gray-600 hover:underline"
+                                  title={`View ${instructor.name}'s faculty page`}
                                 >
                                   {instructor.name}
                                 </a>
-                              </div>
-                            ))}
-                          </TableCell>
+                              ))}
+                            </TableCell>
                           <TableCell>{course.daysTimes}</TableCell>
                           <TableCell>{course.room}</TableCell>
                           <TableCell>{course.units}</TableCell>
