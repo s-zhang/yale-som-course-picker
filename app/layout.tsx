@@ -13,7 +13,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "SOM Course Picker",
+  title: "MySOMClasses",
   description: "Course selection website for Yale School of Management",
   generator: "v0.dev",
   icons: {
