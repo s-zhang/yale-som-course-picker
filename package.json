@@ -7,7 +7,8 @@
     "dev": "next dev",
     "lint": "next lint",
     "start": "next start",
-    "test": "vitest"
+    "test": "vitest",
+    "test:integration": "playwright test"
   },
   "dependencies": {
     "@edge-runtime/vm": "latest",
@@ -69,6 +70,7 @@
     "zod": "^3.24.1"
   },
   "devDependencies": {
+    "@playwright/test": "^1.54.2",
     "@types/node": "^22",
     "@types/react": "^19",
     "@types/react-dom": "^19",

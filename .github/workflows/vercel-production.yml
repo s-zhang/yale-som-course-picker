@@ -22,8 +22,17 @@ jobs:
       - run: pnpm exec vitest run
       - run: npx vercel pull --yes --environment=production --token ${{ secrets.VERCEL_TOKEN }}
       - run: npx vercel build --prod --token ${{ secrets.VERCEL_TOKEN }}
-      - run: npx vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }}
+      - id: deploy
+        run: |
+          output=$(npx vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }})
+          echo "$output"
+          url=$(echo "$output" | grep -o 'https://[^ ]*\.vercel\.app' | tail -n1)
+          echo "url=$url" >> "$GITHUB_OUTPUT"
         env:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+      - run: pnpm exec playwright install --with-deps
+      - run: pnpm exec playwright test
+        env:
+          PLAYWRIGHT_BASE_URL: ${{ steps.deploy.outputs.url }}
 

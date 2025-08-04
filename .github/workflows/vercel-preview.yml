@@ -35,6 +35,10 @@ jobs:
         env:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+      - run: pnpm exec playwright install --with-deps
+      - run: pnpm exec playwright test
+        env:
+          PLAYWRIGHT_BASE_URL: ${{ steps.deploy.outputs.url }}
       - uses: actions/github-script@v6
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
