@@ -21,6 +21,27 @@ const DAY_TO_RRULE: Record<string, string> = {
   Saturday: 'SA'
 }
 
+function generateVTimezone(): string {
+  return `BEGIN:VTIMEZONE
+TZID:America/New_York
+BEGIN:DAYLIGHT
+TZOFFSETFROM:-0500
+TZOFFSETTO:-0400
+TZNAME:EDT
+DTSTART:20070311T020000
+RRULE:FREQ=YEARLY;BYMONTH=3;BYDAY=2SU
+END:DAYLIGHT
+BEGIN:STANDARD
+TZOFFSETFROM:-0400
+TZOFFSETTO:-0500
+TZNAME:EST
+DTSTART:20071104T020000
+RRULE:FREQ=YEARLY;BYMONTH=11;BYDAY=1SU
+END:STANDARD
+END:VTIMEZONE
+`
+}
+
 function parseDate(dateStr: string): Date | null {
   if (!dateStr) return null
   const clean = dateStr.substring(0, 8)
@@ -38,8 +59,12 @@ function applyTime(date: Date, time: string): Date {
   const minute = Number(minuteStr)
   if (/pm/i.test(period) && hour !== 12) hour += 12
   if (/am/i.test(period) && hour === 12) hour = 0
-  date.setUTCHours(hour, minute, 0, 0)
-  return date
+  
+  // Set time as Eastern Time (will be interpreted as local time in Eastern timezone)
+  const result = new Date(date)
+  result.setFullYear(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate())
+  result.setHours(hour, minute, 0, 0)
+  return result
 }
 
 function firstMeetingDate(start: Date, meetingDays: string[]): Date {
@@ -57,11 +82,20 @@ function firstMeetingDate(start: Date, meetingDays: string[]): Date {
 }
 
 function formatDate(date: Date): string {
-  return date.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z'
+  // Format as YYYYMMDDTHHMMSS for use with TZID
+  const year = date.getFullYear().toString().padStart(4, '0')
+  const month = (date.getMonth() + 1).toString().padStart(2, '0')
+  const day = date.getDate().toString().padStart(2, '0')
+  const hour = date.getHours().toString().padStart(2, '0')
+  const minute = date.getMinutes().toString().padStart(2, '0')
+  const second = date.getSeconds().toString().padStart(2, '0')
+  return `${year}${month}${day}T${hour}${minute}${second}`
 }
 
 export function generateICS(courses: IcsCourse[]): string {
   let ics = 'BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//Yale SOM//Course Schedule//EN\n'
+  ics += generateVTimezone()
+  
   for (const course of courses) {
     if (!course.meetingDays.length || !course.startTime || !course.endTime) {
       continue
@@ -79,8 +113,8 @@ export function generateICS(courses: IcsCourse[]): string {
     ics += `SUMMARY:${course.courseNumber} - ${course.courseTitle}\n`
     ics += `DESCRIPTION:${course.courseDescription.replace(/\n/g, '\\n')}\n`
     ics += `LOCATION:${course.room}\n`
-    ics += `DTSTART:${formatDate(firstDate)}\n`
-    ics += `DTEND:${formatDate(endDate)}\n`
+    ics += `DTSTART;TZID=America/New_York:${formatDate(firstDate)}\n`
+    ics += `DTEND;TZID=America/New_York:${formatDate(endDate)}\n`
     ics += `RRULE:FREQ=WEEKLY;BYDAY=${byDays};UNTIL=${formatDate(untilDate)}\n`
     ics += `UID:${course.courseID}@som.yale.edu\n`
     ics += 'END:VEVENT\n'
