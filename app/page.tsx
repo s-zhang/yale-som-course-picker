@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react"
 import React from "react"
 import { Button } from "@/components/ui/button"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
@@ -16,6 +15,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { generateICS } from "@/lib/ics"
 import { capitalize } from "@/lib/utils"
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 
 interface Instructor {
   name: string
@@ -566,7 +566,7 @@ export default function SOMCourse() {
   const [scheduledCourses, setScheduledCourses] = useState<ScheduledCourse[]>([])
   const [searchTerm, setSearchTerm] = useState("")
   const [loading, setLoading] = useState(true)
-  const [activeTab, setActiveTab] = useState("calendar")
+  const [viewMode, setViewMode] = useState("all") // "all" for table, or session names for calendar
   const [selectedCategories, setSelectedCategories] = useState<string[]>([])
   const [selectedSessions, setSelectedSessions] = useState<string[]>([])
   const [selectedInstructors, setSelectedInstructors] = useState<string[]>([])
@@ -618,6 +618,57 @@ export default function SOMCourse() {
     })
     return Array.from(programCohortSet).sort()
   }, [courses])
+
+  // Get available sessions from scheduled courses
+  const availableSessions = React.useMemo(() => {
+    const sessionSet = new Set<string>()
+    scheduledCourses.forEach((course) => {
+      const session = course.courseSession
+      if (!session) return
+      
+      // Map sessions to specific periods
+      if (session === "Fall" || session === "Fall-1") {
+        sessionSet.add("Fall-1")
+      }
+      if (session === "Fall" || session === "Fall-2") {
+        sessionSet.add("Fall-2")
+      }
+      if (session === "Spring" || session === "Spring-1") {
+        sessionSet.add("Spring-1")
+      }
+      if (session === "Spring" || session === "Spring-2") {
+        sessionSet.add("Spring-2")
+      }
+    })
+    return Array.from(sessionSet).sort()
+  }, [scheduledCourses])
+
+  // Filter scheduled courses based on view mode
+  const filteredScheduledCourses = React.useMemo(() => {
+    if (viewMode === "all") {
+      return scheduledCourses
+    }
+    
+    return scheduledCourses.filter((course) => {
+      const session = course.courseSession
+      if (!session) return false
+      
+      // Check if course matches the selected session
+      if (viewMode === "Fall-1" && (session === "Fall" || session === "Fall-1")) {
+        return true
+      }
+      if (viewMode === "Fall-2" && (session === "Fall" || session === "Fall-2")) {
+        return true
+      }
+      if (viewMode === "Spring-1" && (session === "Spring" || session === "Spring-1")) {
+        return true
+      }
+      if (viewMode === "Spring-2" && (session === "Spring" || session === "Spring-2")) {
+        return true
+      }
+      return false
+    })
+  }, [scheduledCourses, viewMode])
 
   // Initialize state from query parameters
   useEffect(() => {
@@ -764,8 +815,8 @@ export default function SOMCourse() {
   )
 
   const timeSlots = React.useMemo(() => {
-    if (scheduledCourses.length === 0) return DEFAULT_TIME_SLOTS
-    const mins = scheduledCourses.flatMap((c) => [
+    if (filteredScheduledCourses.length === 0) return DEFAULT_TIME_SLOTS
+    const mins = filteredScheduledCourses.flatMap((c) => [
       parseTimeToMinutes(c.startTime),
       parseTimeToMinutes(c.endTime),
     ])
@@ -778,7 +829,7 @@ export default function SOMCourse() {
       slots.push(formatMinutesToTime(t))
     }
     return slots
-  }, [scheduledCourses])
+  }, [filteredScheduledCourses])
 
   const scheduleStartMinutes = React.useMemo(
     () => parseTimeToMinutes(timeSlots[0] ?? "8:00 AM"),
@@ -843,11 +894,11 @@ export default function SOMCourse() {
     const dayLayouts: Record<string, Record<string, { index: number; total: number }>> = {}
     DAYS.forEach((d) => {
       dayLayouts[d] = computeCourseLayout(
-        scheduledCourses.filter((c) => c.meetingDays.includes(d))
+        filteredScheduledCourses.filter((c) => c.meetingDays.includes(d))
       )
     })
     return dayLayouts
-  }, [scheduledCourses])
+  }, [filteredScheduledCourses])
 
   const clearAllFilters = () => {
     setSelectedCategories([])
@@ -1044,198 +1095,214 @@ export default function SOMCourse() {
             </Badge>
           </div>
 
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <div className="flex justify-center mb-4">
-              <TabsList>
-                <TabsTrigger value="calendar" className="flex items-center">
+          <div className="flex justify-center mb-4">
+            <ToggleGroup type="single" value={viewMode} onValueChange={(value) => value && setViewMode(value)}>
+              {availableSessions.includes("Fall-1") && (
+                <ToggleGroupItem value="Fall-1" className="flex items-center">
                   <Calendar className="w-4 h-4 mr-2" />
-                  Calendar
-                </TabsTrigger>
-                <TabsTrigger value="table" className="flex items-center">
-                  <TableIcon className="w-4 h-4 mr-2" />
-                  Table
-                </TabsTrigger>
-              </TabsList>
-            </div>
+                  Fall-1
+                </ToggleGroupItem>
+              )}
+              {availableSessions.includes("Fall-2") && (
+                <ToggleGroupItem value="Fall-2" className="flex items-center">
+                  <Calendar className="w-4 h-4 mr-2" />
+                  Fall-2
+                </ToggleGroupItem>
+              )}
+              {availableSessions.includes("Spring-1") && (
+                <ToggleGroupItem value="Spring-1" className="flex items-center">
+                  <Calendar className="w-4 h-4 mr-2" />
+                  Spring-1
+                </ToggleGroupItem>
+              )}
+              {availableSessions.includes("Spring-2") && (
+                <ToggleGroupItem value="Spring-2" className="flex items-center">
+                  <Calendar className="w-4 h-4 mr-2" />
+                  Spring-2
+                </ToggleGroupItem>
+              )}
+              <ToggleGroupItem value="all" className="flex items-center">
+                <TableIcon className="w-4 h-4 mr-2" />
+                All
+              </ToggleGroupItem>
+            </ToggleGroup>
+          </div>
 
-            <TabsContent value="table">
-              <Card>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="w-12"></TableHead>
-                      <TableHead>Number</TableHead>
-                      <TableHead>Title</TableHead>
-                      <TableHead>Session</TableHead>
-                      <TableHead>Category</TableHead>
-                      <TableHead>Instructor</TableHead>
-                      <TableHead>Meets</TableHead>
-                      <TableHead>Location</TableHead>
-                      <TableHead>Units</TableHead>
-                      <TableHead>Syllabus</TableHead>
-                      <TableHead>Description</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {scheduledCourses.length > 0 ? (
-                      scheduledCourses.map((course) => (
-                        <TableRow key={course.courseID}>
-                          <TableCell>
-                            <Button
-                              onClick={() => removeFromSchedule(course.courseID)}
-                              size="icon"
-                              title="Remove course"
-                              className={`${course.color} h-6 w-6 text-white hover:opacity-90 focus-visible:ring-offset-0 focus-visible:ring-2 focus-visible:ring-ring`}
-                            >
-                              <Minus className="h-4 w-4" />
-                            </Button>
-                          </TableCell>
-                          <TableCell>{course.courseNumber}</TableCell>
-                          <TableCell className="font-medium">{course.courseTitle}</TableCell>
-                          <TableCell>{course.courseSession}</TableCell>
-                          <TableCell>{course.courseCategories.join(", ")}</TableCell>
-                          <TableCell>
-                            {course.instructors.map((instructor) => (
-                              <div key={instructor.email}>
-                                <a
-                                  href={`mailto:${instructor.email}`}
-                                  className="text-gray-600 hover:underline"
-                                  title={`Email ${instructor.name}`}
-                                >
-                                  {instructor.name}
-                                </a>
-                              </div>
-                            ))}
-                          </TableCell>
-                          <TableCell>{course.daysTimes}</TableCell>
-                          <TableCell>{course.room}</TableCell>
-                          <TableCell>{course.units}</TableCell>
-                          <TableCell>
-                            <div>
-                              {course.syllabusUrl || course.oldSyllabusUrl ? (
-                                <span>
-                                  {course.syllabusUrl && (
-                                    <a
-                                      href={course.syllabusUrl}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      className="underline"
-                                    >
-                                      link
-                                    </a>
-                                  )}
-                                  {course.syllabusUrl && course.oldSyllabusUrl &&
-                                    ', '}
-                                  {course.oldSyllabusUrl && (
-                                    <a
-                                      href={course.oldSyllabusUrl}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      className="underline"
-                                    >
-                                      old
-                                    </a>
-                                  )}
-                                </span>
-                              ) : null}
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <ExpandableTableCell text={course.courseDescription} />
-                          </TableCell>
-                        </TableRow>
-                      ))
-                    ) : (
-                      <TableRow>
-                        <TableCell colSpan={11} className="h-24 text-center">
-                          No courses selected yet. Add courses from the list below.
+          {viewMode === "all" ? (
+            <Card>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-12"></TableHead>
+                    <TableHead>Number</TableHead>
+                    <TableHead>Title</TableHead>
+                    <TableHead>Session</TableHead>
+                    <TableHead>Category</TableHead>
+                    <TableHead>Instructor</TableHead>
+                    <TableHead>Meets</TableHead>
+                    <TableHead>Location</TableHead>
+                    <TableHead>Units</TableHead>
+                    <TableHead>Syllabus</TableHead>
+                    <TableHead>Description</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {scheduledCourses.length > 0 ? (
+                    scheduledCourses.map((course) => (
+                      <TableRow key={course.courseID}>
+                        <TableCell>
+                          <Button
+                            onClick={() => removeFromSchedule(course.courseID)}
+                            size="icon"
+                            title="Remove course"
+                            className={`${course.color} h-6 w-6 text-white hover:opacity-90 focus-visible:ring-offset-0 focus-visible:ring-2 focus-visible:ring-ring`}
+                          >
+                            <Minus className="h-4 w-4" />
+                          </Button>
                         </TableCell>
-                      </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
-              </Card>
-            </TabsContent>
-
-            <TabsContent value="calendar">
-              <div className="bg-white rounded-lg border">
-                <div
-                  className="grid grid-cols-6 border-b"
-                  style={{ gridTemplateColumns: 'max-content repeat(5, 1fr)' }}
-                >
-                  <div
-                    className="border-r bg-gray-50 px-2 py-1 text-xs whitespace-nowrap"
-                    style={{ width: 70 }}
-                  />
-                  {DAYS.map((day, i) => (
-                    <div
-                      key={day}
-                      className="p-4 text-center font-medium border-r last:border-r-0"
-                    >
-                      <span className="hidden sm:inline">{day}</span>
-                      <span className="sm:hidden">{DAYS_SHORT[i]}</span>
-                    </div>
-                  ))}
-                </div>
-
-                {scheduledCourses.length === 0 ? (
-                  <div className="p-8 text-center text-gray-500">
-                    <p>Add courses from the list below to see your schedule.</p>
-                  </div>
-                ) : (
-                  <div
-                    className="grid grid-cols-6 relative"
-                    style={{
-                      height: `${timeSlots.length * TIME_SLOT_HEIGHT}px`,
-                      gridTemplateColumns: 'max-content repeat(5, 1fr)'
-                    }}
-                  >
-                    <div className="border-r bg-gray-50" style={{ width: 70 }}>
-                      {timeSlots.map((time) => (
-                        <div key={time} className="h-10 border-b text-xs text-gray-500 px-2 py-1 whitespace-nowrap">
-                          {time}
-                        </div>
-                      ))}
-                    </div>
-
-                    {DAYS.map((day) => (
-                      <div key={day} className="border-r last:border-r-0 relative">
-                        {timeSlots.map((time) => (
-                          <div key={time} className="h-10 border-b border-gray-100"></div>
-                        ))}
-
-                        {scheduledCourses
-                          .filter((course) => course.meetingDays.includes(day))
-                          .map((course) => (
-                            <div
-                              key={`${course.courseID}-${day}`}
-                              className={`absolute ${course.color} text-white text-xs p-2 rounded shadow-sm cursor-pointer hover:shadow-md transition-shadow`}
-                              style={{
-                                top: `${getTimePosition(course.startTime)}px`,
-                                height: `${getCourseDuration(course.startTime, course.endTime)}px`,
-                                width: `calc(100% / ${layoutByDay[day][course.courseID]?.total || 1})`,
-                                left: `calc(${layoutByDay[day][course.courseID]?.index || 0} * 100% / ${layoutByDay[day][course.courseID]?.total || 1})`,
-                              }}
-                              onClick={() => removeFromSchedule(course.courseID)}
-                              title="Click to remove from schedule"
-                            >
-                              <div className="font-medium">{course.courseNumber}</div>
-                              <div className="truncate">{course.courseTitle}</div>
-                              {course.courseSession && (
-                                <div className="text-xs opacity-90">
-                                  {course.courseSession}
-                                </div>
-                              )}
-                              <div className="text-xs opacity-90">{course.room}</div>
+                        <TableCell>{course.courseNumber}</TableCell>
+                        <TableCell className="font-medium">{course.courseTitle}</TableCell>
+                        <TableCell>{course.courseSession}</TableCell>
+                        <TableCell>{course.courseCategories.join(", ")}</TableCell>
+                        <TableCell>
+                          {course.instructors.map((instructor) => (
+                            <div key={instructor.email}>
+                              <a
+                                href={`mailto:${instructor.email}`}
+                                className="text-gray-600 hover:underline"
+                                title={`Email ${instructor.name}`}
+                              >
+                                {instructor.name}
+                              </a>
                             </div>
                           ))}
+                        </TableCell>
+                        <TableCell>{course.daysTimes}</TableCell>
+                        <TableCell>{course.room}</TableCell>
+                        <TableCell>{course.units}</TableCell>
+                        <TableCell>
+                          <div>
+                            {course.syllabusUrl || course.oldSyllabusUrl ? (
+                              <span>
+                                {course.syllabusUrl && (
+                                  <a
+                                    href={course.syllabusUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="underline"
+                                  >
+                                    link
+                                  </a>
+                                )}
+                                {course.syllabusUrl && course.oldSyllabusUrl &&
+                                  ', '}
+                                {course.oldSyllabusUrl && (
+                                  <a
+                                    href={course.oldSyllabusUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="underline"
+                                  >
+                                    old
+                                  </a>
+                                )}
+                              </span>
+                            ) : null}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <ExpandableTableCell text={course.courseDescription} />
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={11} className="h-24 text-center">
+                        No courses selected yet. Add courses from the list below.
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </Card>
+          ) : (
+            <div className="bg-white rounded-lg border">
+              <div
+                className="grid grid-cols-6 border-b"
+                style={{ gridTemplateColumns: 'max-content repeat(5, 1fr)' }}
+              >
+                <div
+                  className="border-r bg-gray-50 px-2 py-1 text-xs whitespace-nowrap"
+                  style={{ width: 70 }}
+                />
+                {DAYS.map((day, i) => (
+                  <div
+                    key={day}
+                    className="p-4 text-center font-medium border-r last:border-r-0"
+                  >
+                    <span className="hidden sm:inline">{day}</span>
+                    <span className="sm:hidden">{DAYS_SHORT[i]}</span>
+                  </div>
+                ))}
+              </div>
+
+              {filteredScheduledCourses.length === 0 ? (
+                <div className="p-8 text-center text-gray-500">
+                  <p>No courses for {viewMode} session.</p>
+                </div>
+              ) : (
+                <div
+                  className="grid grid-cols-6 relative"
+                  style={{
+                    height: `${timeSlots.length * TIME_SLOT_HEIGHT}px`,
+                    gridTemplateColumns: 'max-content repeat(5, 1fr)'
+                  }}
+                >
+                  <div className="border-r bg-gray-50" style={{ width: 70 }}>
+                    {timeSlots.map((time) => (
+                      <div key={time} className="h-10 border-b text-xs text-gray-500 px-2 py-1 whitespace-nowrap">
+                        {time}
                       </div>
                     ))}
                   </div>
-                )}
-              </div>
-            </TabsContent>
-          </Tabs>
+
+                  {DAYS.map((day) => (
+                    <div key={day} className="border-r last:border-r-0 relative">
+                      {timeSlots.map((time) => (
+                        <div key={time} className="h-10 border-b border-gray-100"></div>
+                      ))}
+
+                      {filteredScheduledCourses
+                        .filter((course) => course.meetingDays.includes(day))
+                        .map((course) => (
+                          <div
+                            key={`${course.courseID}-${day}`}
+                            className={`absolute ${course.color} text-white text-xs p-2 rounded shadow-sm cursor-pointer hover:shadow-md transition-shadow`}
+                            style={{
+                              top: `${getTimePosition(course.startTime)}px`,
+                              height: `${getCourseDuration(course.startTime, course.endTime)}px`,
+                              width: `calc(100% / ${layoutByDay[day][course.courseID]?.total || 1})`,
+                              left: `calc(${layoutByDay[day][course.courseID]?.index || 0} * 100% / ${layoutByDay[day][course.courseID]?.total || 1})`,
+                            }}
+                            onClick={() => removeFromSchedule(course.courseID)}
+                            title="Click to remove from schedule"
+                          >
+                            <div className="font-medium">{course.courseNumber}</div>
+                            <div className="truncate">{course.courseTitle}</div>
+                            {course.courseSession && (
+                              <div className="text-xs opacity-90">
+                                {course.courseSession}
+                              </div>
+                            )}
+                            <div className="text-xs opacity-90">{course.room}</div>
+                          </div>
+                        ))}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Available Courses Section - Bottom */}
