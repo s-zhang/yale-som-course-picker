@@ -16,16 +16,16 @@ Yale SOM Course Picker is a scheduling tool for browsing and organizing courses 
 
 Install dependencies and start the development server:
 
-\`\`\`bash
+```bash
 pnpm install
 pnpm dev
-\`\`\`
+```
 
 To create a production build:
 
-\`\`\`bash
+```bash
 pnpm build
-\`\`\`
+```
 
 ## Deployment
 
