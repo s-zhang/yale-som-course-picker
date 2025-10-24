@@ -723,7 +723,7 @@ export default function SOMCourse() {
       if (initialScheduledIds && initialScheduledIds.length > 0 && scheduledCourses.length === 0) {
         const selected: ScheduledCourse[] = []
         initialScheduledIds.forEach((id, idx) => {
-          const course = uniqueCourses.find((c) => c.courseID === id)
+          const course = uniqueCourses.find((c: Course) => c.courseID === id)
           if (course) {
             selected.push({ ...course, color: COLORS[idx % COLORS.length] })
           }
