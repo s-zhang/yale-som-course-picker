@@ -2,84 +2,30 @@ import { describe, it, expect } from 'vitest'
 import { getTargetViewMode } from '@/lib/utils'
 
 describe('View mode switching logic', () => {
-  describe('When adding courses from "all" table view', () => {
-    it('should switch to Spring-1 when adding a Spring-1 course', () => {
-      expect(getTargetViewMode('Spring-1', 'all')).toBe('Spring-1')
-    })
-
-    it('should switch to Spring-2 when adding a Spring-2 course', () => {
-      expect(getTargetViewMode('Spring-2', 'all')).toBe('Spring-2')
-    })
-
-    it('should switch to Fall-1 when adding a Fall-1 course', () => {
-      expect(getTargetViewMode('Fall-1', 'all')).toBe('Fall-1')
-    })
-
-    it('should switch to Fall-2 when adding a Fall-2 course', () => {
-      expect(getTargetViewMode('Fall-2', 'all')).toBe('Fall-2')
-    })
-
-    it('should switch to Spring-1 when adding a generic Spring course', () => {
-      expect(getTargetViewMode('Spring', 'all')).toBe('Spring-1')
-    })
-
-    it('should switch to Fall-1 when adding a generic Fall course', () => {
-      expect(getTargetViewMode('Fall', 'all')).toBe('Fall-1')
-    })
-
-    it('should stay at "all" when adding a course with unknown session', () => {
-      expect(getTargetViewMode('Summer', 'all')).toBe('all')
-    })
-
-    it('should stay at "all" when adding a course with null session', () => {
-      expect(getTargetViewMode('', 'all')).toBe('all')
-    })
+  it('should switch to specific session view when adding specific session courses', () => {
+    expect(getTargetViewMode('Spring-1', 'all')).toBe('Spring-1')
+    expect(getTargetViewMode('Spring-2', 'Fall-1')).toBe('Spring-2')
+    expect(getTargetViewMode('Fall-1', 'all')).toBe('Fall-1')
+    expect(getTargetViewMode('Fall-2', 'Spring-1')).toBe('Fall-2')
   })
 
-  describe('When adding Spring courses from specific calendar views', () => {
-    it('should switch to Spring-1 when adding a Spring-1 course from Fall-1 view', () => {
-      expect(getTargetViewMode('Spring-1', 'Fall-1')).toBe('Spring-1')
-    })
-
-    it('should stay at Spring-1 when adding a generic Spring course from Spring-1 view', () => {
-      expect(getTargetViewMode('Spring', 'Spring-1')).toBe('Spring-1')
-    })
-
-    it('should stay at Spring-2 when adding a generic Spring course from Spring-2 view', () => {
-      expect(getTargetViewMode('Spring', 'Spring-2')).toBe('Spring-2')
-    })
-
-    it('should default to Spring-1 when adding a generic Spring course from Fall-1 view', () => {
-      expect(getTargetViewMode('Spring', 'Fall-1')).toBe('Spring-1')
-    })
+  it('should stay on current semester view when adding generic semester courses', () => {
+    expect(getTargetViewMode('Spring', 'Spring-1')).toBe('Spring-1')
+    expect(getTargetViewMode('Spring', 'Spring-2')).toBe('Spring-2')
+    expect(getTargetViewMode('Fall', 'Fall-1')).toBe('Fall-1')
+    expect(getTargetViewMode('Fall', 'Fall-2')).toBe('Fall-2')
   })
 
-  describe('When adding Fall courses from specific calendar views', () => {
-    it('should switch to Fall-1 when adding a Fall-1 course from Spring-1 view', () => {
-      expect(getTargetViewMode('Fall-1', 'Spring-1')).toBe('Fall-1')
-    })
-
-    it('should stay at Fall-1 when adding a generic Fall course from Fall-1 view', () => {
-      expect(getTargetViewMode('Fall', 'Fall-1')).toBe('Fall-1')
-    })
-
-    it('should stay at Fall-2 when adding a generic Fall course from Fall-2 view', () => {
-      expect(getTargetViewMode('Fall', 'Fall-2')).toBe('Fall-2')
-    })
-
-    it('should default to Fall-1 when adding a generic Fall course from Spring-1 view', () => {
-      expect(getTargetViewMode('Fall', 'Spring-1')).toBe('Fall-1')
-    })
+  it('should default to -1 view when adding generic semester from different semester', () => {
+    expect(getTargetViewMode('Spring', 'all')).toBe('Spring-1')
+    expect(getTargetViewMode('Spring', 'Fall-1')).toBe('Spring-1')
+    expect(getTargetViewMode('Fall', 'all')).toBe('Fall-1')
+    expect(getTargetViewMode('Fall', 'Spring-1')).toBe('Fall-1')
   })
 
-  describe('When adding courses with non-standard sessions', () => {
-    it('should switch to "all" when adding a Summer course from Spring-1 view', () => {
-      expect(getTargetViewMode('Summer', 'Spring-1')).toBe('all')
-    })
-
-    it('should switch to "all" when adding a Winter course from Fall-2 view', () => {
-      expect(getTargetViewMode('Winter', 'Fall-2')).toBe('all')
-    })
+  it('should switch to "all" for non-standard sessions', () => {
+    expect(getTargetViewMode('Summer', 'Spring-1')).toBe('all')
+    expect(getTargetViewMode('', 'Fall-1')).toBe('all')
   })
 })
 

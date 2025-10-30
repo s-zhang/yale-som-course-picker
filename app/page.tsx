@@ -567,6 +567,7 @@ export default function SOMCourse() {
   const [searchTerm, setSearchTerm] = useState("")
   const [loading, setLoading] = useState(true)
   const [viewMode, setViewMode] = useState("all") // "all" for table, or session names for calendar
+  const [manuallySelectedAll, setManuallySelectedAll] = useState(false) // Track if user manually selected "All" view
   const [selectedCategories, setSelectedCategories] = useState<string[]>([])
   const [selectedSessions, setSelectedSessions] = useState<string[]>([])
   const [selectedInstructors, setSelectedInstructors] = useState<string[]>([])
@@ -757,10 +758,12 @@ export default function SOMCourse() {
     const scheduledCourse: ScheduledCourse = { ...course, color }
     setScheduledCourses([...scheduledCourses, scheduledCourse])
 
-    // Switch to appropriate view mode based on course session
-    const targetViewMode = getTargetViewMode(course.courseSession, viewMode)
-    if (targetViewMode !== viewMode) {
-      setViewMode(targetViewMode)
+    // Only switch view if user hasn't manually selected "All" view
+    if (!manuallySelectedAll) {
+      const targetViewMode = getTargetViewMode(course.courseSession, viewMode)
+      if (targetViewMode !== viewMode) {
+        setViewMode(targetViewMode)
+      }
     }
   }
 
@@ -1102,7 +1105,13 @@ export default function SOMCourse() {
           </div>
 
           <div className="flex justify-center mb-4">
-            <ToggleGroup type="single" value={viewMode} onValueChange={(value) => value && setViewMode(value)}>
+            <ToggleGroup type="single" value={viewMode} onValueChange={(value) => {
+              if (value) {
+                setViewMode(value)
+                // Track when user manually selects "All" view
+                setManuallySelectedAll(value === "all")
+              }
+            }}>
               {availableSessions.includes("Fall-1") && (
                 <ToggleGroupItem value="Fall-1" className="flex items-center">
                   <Calendar className="w-4 h-4 mr-2" />
