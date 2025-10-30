@@ -1,4 +1,33 @@
 import { describe, it, expect } from 'vitest'
+import { getTargetViewMode } from '@/lib/utils'
+
+describe('View mode switching logic', () => {
+  it('should switch to specific session view when adding specific session courses', () => {
+    expect(getTargetViewMode('Spring-1', 'all')).toBe('Spring-1')
+    expect(getTargetViewMode('Spring-2', 'Fall-1')).toBe('Spring-2')
+    expect(getTargetViewMode('Fall-1', 'all')).toBe('Fall-1')
+    expect(getTargetViewMode('Fall-2', 'Spring-1')).toBe('Fall-2')
+  })
+
+  it('should stay on current semester view when adding generic semester courses', () => {
+    expect(getTargetViewMode('Spring', 'Spring-1')).toBe('Spring-1')
+    expect(getTargetViewMode('Spring', 'Spring-2')).toBe('Spring-2')
+    expect(getTargetViewMode('Fall', 'Fall-1')).toBe('Fall-1')
+    expect(getTargetViewMode('Fall', 'Fall-2')).toBe('Fall-2')
+  })
+
+  it('should default to -1 view when adding generic semester from different semester', () => {
+    expect(getTargetViewMode('Spring', 'all')).toBe('Spring-1')
+    expect(getTargetViewMode('Spring', 'Fall-1')).toBe('Spring-1')
+    expect(getTargetViewMode('Fall', 'all')).toBe('Fall-1')
+    expect(getTargetViewMode('Fall', 'Spring-1')).toBe('Fall-1')
+  })
+
+  it('should switch to "all" for non-standard sessions', () => {
+    expect(getTargetViewMode('Summer', 'Spring-1')).toBe('all')
+    expect(getTargetViewMode('', 'Fall-1')).toBe('all')
+  })
+})
 
 describe('Multi-state toggle logic', () => {
   it('should map Fall courses to Fall-1 and Fall-2 sessions', () => {
