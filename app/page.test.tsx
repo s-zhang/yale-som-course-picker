@@ -1,56 +1,5 @@
 import { describe, it, expect } from 'vitest'
-
-// Helper function to determine target view mode when adding a course
-const getTargetViewMode = (courseSession: string, currentViewMode: string): string => {
-  // If course session is not Spring/Fall/1/2, switch to "all"
-  if (!courseSession || !["Spring", "Spring-1", "Spring-2", "Fall", "Fall-1", "Fall-2"].includes(courseSession)) {
-    return "all"
-  }
-
-  // If user last selected "all" table view, and course is a specific session, switch to that session
-  // Otherwise stay at "all"
-  if (currentViewMode === "all") {
-    // For specific sessions, switch to that calendar view
-    if (["Spring-1", "Spring-2", "Fall-1", "Fall-2"].includes(courseSession)) {
-      return courseSession
-    }
-    // For generic "Spring" or "Fall", default to -1 version
-    if (courseSession === "Spring") {
-      return "Spring-1"
-    }
-    if (courseSession === "Fall") {
-      return "Fall-1"
-    }
-  }
-
-  // For specific session courses (e.g., Spring-1), switch to that view
-  if (courseSession === "Spring-1" || courseSession === "Spring-2" || 
-      courseSession === "Fall-1" || courseSession === "Fall-2") {
-    return courseSession
-  }
-
-  // For generic "Spring" or "Fall" courses
-  if (courseSession === "Spring") {
-    // If already on a Spring view, stay there
-    if (currentViewMode === "Spring-1" || currentViewMode === "Spring-2") {
-      return currentViewMode
-    }
-    // Otherwise, default to Spring-1
-    return "Spring-1"
-  }
-
-  if (courseSession === "Fall") {
-    // If already on a Fall view, stay there
-    if (currentViewMode === "Fall-1" || currentViewMode === "Fall-2") {
-      return currentViewMode
-    }
-    // Otherwise, default to Fall-1
-    return "Fall-1"
-  }
-
-  // Default: stay at current view
-  return currentViewMode
-}
+import { getTargetViewMode } from '@/lib/utils'
 
 describe('View mode switching logic', () => {
   describe('When adding courses from "all" table view', () => {
