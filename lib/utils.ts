@@ -16,30 +16,16 @@ export function capitalize(str: string): string {
  * @returns The target view mode to switch to
  */
 export function getTargetViewMode(courseSession: string, currentViewMode: string): string {
+  const VALID_SESSIONS = ["Spring", "Spring-1", "Spring-2", "Fall", "Fall-1", "Fall-2"]
+  const SPECIFIC_SESSIONS = ["Spring-1", "Spring-2", "Fall-1", "Fall-2"]
+  
   // If course session is not Spring/Fall/1/2, switch to "all"
-  if (!courseSession || !["Spring", "Spring-1", "Spring-2", "Fall", "Fall-1", "Fall-2"].includes(courseSession)) {
+  if (!courseSession || !VALID_SESSIONS.includes(courseSession)) {
     return "all"
   }
 
-  // If user last selected "all" table view, and course is a specific session, switch to that session
-  // Otherwise stay at "all"
-  if (currentViewMode === "all") {
-    // For specific sessions, switch to that calendar view
-    if (["Spring-1", "Spring-2", "Fall-1", "Fall-2"].includes(courseSession)) {
-      return courseSession
-    }
-    // For generic "Spring" or "Fall", default to -1 version
-    if (courseSession === "Spring") {
-      return "Spring-1"
-    }
-    if (courseSession === "Fall") {
-      return "Fall-1"
-    }
-  }
-
-  // For specific session courses (e.g., Spring-1), switch to that view
-  if (courseSession === "Spring-1" || courseSession === "Spring-2" || 
-      courseSession === "Fall-1" || courseSession === "Fall-2") {
+  // For specific session courses (e.g., Spring-1), always switch to that view
+  if (SPECIFIC_SESSIONS.includes(courseSession)) {
     return courseSession
   }
 
