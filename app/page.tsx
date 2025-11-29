@@ -14,7 +14,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Checkbox } from "@/components/ui/checkbox"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { generateICS } from "@/lib/ics"
-import { capitalize, getTargetViewMode } from "@/lib/utils"
+import { capitalize, getTargetViewMode, hasValidMeetingTime } from "@/lib/utils"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 
 interface Instructor {
@@ -823,9 +823,14 @@ export default function SOMCourse() {
         (course.programCohorts || []).some((pc) => selectedProgramCohorts.includes(pc.name))),
   )
 
+  // Filter scheduled courses to only include those with valid meeting times for calendar display
+  const calendarCourses = React.useMemo(() => {
+    return filteredScheduledCourses.filter(hasValidMeetingTime)
+  }, [filteredScheduledCourses])
+
   const timeSlots = React.useMemo(() => {
-    if (filteredScheduledCourses.length === 0) return DEFAULT_TIME_SLOTS
-    const mins = filteredScheduledCourses.flatMap((c) => [
+    if (calendarCourses.length === 0) return DEFAULT_TIME_SLOTS
+    const mins = calendarCourses.flatMap((c) => [
       parseTimeToMinutes(c.startTime),
       parseTimeToMinutes(c.endTime),
     ])
@@ -838,7 +843,7 @@ export default function SOMCourse() {
       slots.push(formatMinutesToTime(t))
     }
     return slots
-  }, [filteredScheduledCourses])
+  }, [calendarCourses])
 
   const scheduleStartMinutes = React.useMemo(
     () => parseTimeToMinutes(timeSlots[0] ?? "8:00 AM"),
@@ -903,11 +908,11 @@ export default function SOMCourse() {
     const dayLayouts: Record<string, Record<string, { index: number; total: number }>> = {}
     DAYS.forEach((d) => {
       dayLayouts[d] = computeCourseLayout(
-        filteredScheduledCourses.filter((c) => c.meetingDays.includes(d))
+        calendarCourses.filter((c) => c.meetingDays.includes(d))
       )
     })
     return dayLayouts
-  }, [filteredScheduledCourses])
+  }, [calendarCourses])
 
   const clearAllFilters = () => {
     setSelectedCategories([])
@@ -1261,7 +1266,7 @@ export default function SOMCourse() {
                 ))}
               </div>
 
-              {filteredScheduledCourses.length === 0 ? (
+              {calendarCourses.length === 0 ? (
                 <div className="p-8 text-center text-gray-500">
                   <p>No courses for {viewMode} session.</p>
                 </div>
@@ -1287,7 +1292,7 @@ export default function SOMCourse() {
                         <div key={time} className="h-10 border-b border-gray-100"></div>
                       ))}
 
-                      {filteredScheduledCourses
+                      {calendarCourses
                         .filter((course) => course.meetingDays.includes(day))
                         .map((course) => (
                           <div

@@ -1,5 +1,67 @@
 import { describe, it, expect } from 'vitest'
-import { getTargetViewMode } from '@/lib/utils'
+import { getTargetViewMode, hasValidMeetingTime } from '@/lib/utils'
+
+describe('hasValidMeetingTime', () => {
+  it('should return true for courses with valid meeting times', () => {
+    const course = {
+      startTime: '9:00 AM',
+      endTime: '10:30 AM',
+      meetingDays: ['Monday', 'Wednesday']
+    }
+    expect(hasValidMeetingTime(course)).toBe(true)
+  })
+
+  it('should return false for courses without startTime', () => {
+    const course = {
+      endTime: '10:30 AM',
+      meetingDays: ['Monday']
+    }
+    expect(hasValidMeetingTime(course)).toBe(false)
+  })
+
+  it('should return false for courses without endTime', () => {
+    const course = {
+      startTime: '9:00 AM',
+      meetingDays: ['Monday']
+    }
+    expect(hasValidMeetingTime(course)).toBe(false)
+  })
+
+  it('should return false for courses without meetingDays', () => {
+    const course = {
+      startTime: '9:00 AM',
+      endTime: '10:30 AM'
+    }
+    expect(hasValidMeetingTime(course)).toBe(false)
+  })
+
+  it('should return false for courses with empty meetingDays array', () => {
+    const course = {
+      startTime: '9:00 AM',
+      endTime: '10:30 AM',
+      meetingDays: [] as string[]
+    }
+    expect(hasValidMeetingTime(course)).toBe(false)
+  })
+
+  it('should return false for courses with undefined values', () => {
+    const course = {
+      startTime: undefined,
+      endTime: undefined,
+      meetingDays: undefined
+    }
+    expect(hasValidMeetingTime(course)).toBe(false)
+  })
+
+  it('should return false for courses with empty string times', () => {
+    const course = {
+      startTime: '',
+      endTime: '',
+      meetingDays: ['Monday']
+    }
+    expect(hasValidMeetingTime(course)).toBe(false)
+  })
+})
 
 describe('View mode switching logic', () => {
   it('should switch to specific session view when adding specific session courses', () => {

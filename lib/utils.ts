@@ -10,6 +10,15 @@ export function capitalize(str: string): string {
 }
 
 /**
+ * Checks if a course has valid meeting time data for calendar display
+ * @param course - The course object to check
+ * @returns true if the course has valid startTime, endTime, and non-empty meetingDays
+ */
+export function hasValidMeetingTime(course: { startTime?: string; endTime?: string; meetingDays?: string[] }): boolean {
+  return !!(course.startTime && course.endTime && course.meetingDays && course.meetingDays.length > 0)
+}
+
+/**
  * Determines the target view mode when adding a course to the schedule
  * @param courseSession - The session of the course being added (e.g., "Spring-1", "Fall", etc.)
  * @param currentViewMode - The current view mode ("all", "Spring-1", "Spring-2", "Fall-1", "Fall-2")
