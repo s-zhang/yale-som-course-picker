@@ -14,7 +14,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Checkbox } from "@/components/ui/checkbox"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { generateICS } from "@/lib/ics"
-import { capitalize, getTargetViewMode } from "@/lib/utils"
+import { capitalize, getTargetViewMode, hasValidMeetingTime } from "@/lib/utils"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 
 interface Instructor {
@@ -120,11 +120,6 @@ const DEFAULT_TIME_SLOTS = [
 ]
 
 const TIME_SLOT_HEIGHT = 40 // px per 30 minute slot
-
-// Helper function to check if a course has valid meeting time data
-const hasValidMeetingTime = (course: { startTime?: string; endTime?: string; meetingDays?: string[] }): boolean => {
-  return !!(course.startTime && course.endTime && course.meetingDays && course.meetingDays.length > 0)
-}
 
 const parseTimeToMinutes = (time: string): number => {
   const [timeStr, period] = time.split(" ")

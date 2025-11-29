@@ -1,10 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { getTargetViewMode } from '@/lib/utils'
-
-// Helper function to check if a course has valid meeting time data (copied from page.tsx for testing)
-const hasValidMeetingTime = (course: { startTime?: string; endTime?: string; meetingDays?: string[] }): boolean => {
-  return !!(course.startTime && course.endTime && course.meetingDays && course.meetingDays.length > 0)
-}
+import { getTargetViewMode, hasValidMeetingTime } from '@/lib/utils'
 
 describe('hasValidMeetingTime', () => {
   it('should return true for courses with valid meeting times', () => {
