@@ -16,6 +16,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { generateICS } from "@/lib/ics"
 import { capitalize, getTargetViewMode, hasValidMeetingTime } from "@/lib/utils"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
+import { StructuredData } from "@/components/structured-data"
+import { generateCoursesListStructuredData, generateWebSiteStructuredData, generateOrganizationStructuredData } from "@/lib/structured-data"
 
 interface Instructor {
   name: string
@@ -931,6 +933,30 @@ export default function SOMCourse() {
     selectedProgramCohorts.length > 0 ||
     searchTerm.length > 0
 
+  // Generate structured data for SEO
+  const structuredData = React.useMemo(() => {
+    if (filteredCourses.length === 0) return null
+    
+    const coursesForStructuredData = filteredCourses.slice(0, 20).map(course => ({
+      courseNumber: course.courseNumber,
+      courseTitle: course.courseTitle,
+      courseDescription: course.courseDescription,
+      instructors: course.instructors,
+      courseSession: course.courseSession,
+      courseSessionStartDate: course.courseSessionStartDate,
+      courseSessionEndDate: course.courseSessionEndDate,
+      daysTimes: course.daysTimes,
+      room: course.room,
+      syllabusUrl: course.syllabusUrl,
+    }))
+    
+    return generateCoursesListStructuredData(coursesForStructuredData)
+  }, [filteredCourses])
+
+  // Generate WebSite and Organization structured data
+  const websiteStructuredData = React.useMemo(() => generateWebSiteStructuredData(), [])
+  const organizationStructuredData = React.useMemo(() => generateOrganizationStructuredData(), [])
+
   // Update query parameters when filters or schedule change
   useEffect(() => {
     const params = new URLSearchParams()
@@ -1071,6 +1097,9 @@ export default function SOMCourse() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      <StructuredData data={websiteStructuredData} />
+      <StructuredData data={organizationStructuredData} />
+      {structuredData && <StructuredData data={structuredData} />}
       <header className="bg-white border-b border-gray-200 px-6 py-4">
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-bold text-gray-900">

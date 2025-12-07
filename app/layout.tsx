@@ -13,11 +13,52 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "MySOMClasses",
-  description: "Course selection website for Yale School of Management",
+  title: "MySOMClasses - Yale SOM Course Picker & Schedule Planner",
+  description: "Browse, filter, and schedule courses at Yale School of Management. Interactive calendar view, course search, export to ICS, and share your schedule with classmates.",
   generator: "v0.dev",
+  keywords: [
+    "Yale SOM",
+    "Yale School of Management",
+    "course picker",
+    "course scheduler",
+    "MBA courses",
+    "business school courses",
+    "Yale courses",
+    "schedule planner",
+  ],
+  authors: [{ name: "MySOMClasses" }],
+  creator: "MySOMClasses",
+  publisher: "MySOMClasses",
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
+  },
   icons: {
     icon: "https://som.yale.edu/themes/custom/som/images/favicons/favicon.ico",
+  },
+  metadataBase: new URL('https://mysomclasses.com'),
+  openGraph: {
+    type: 'website',
+    locale: 'en_US',
+    url: 'https://mysomclasses.com',
+    siteName: 'MySOMClasses',
+    title: 'MySOMClasses - Yale SOM Course Picker & Schedule Planner',
+    description: 'Browse, filter, and schedule courses at Yale School of Management. Interactive calendar view, course search, export to ICS, and share your schedule.',
+  },
+  twitter: {
+    card: 'summary',
+    title: 'MySOMClasses - Yale SOM Course Picker',
+    description: 'Browse, filter, and schedule courses at Yale School of Management.',
+  },
+  alternates: {
+    canonical: 'https://mysomclasses.com',
   },
 };
 

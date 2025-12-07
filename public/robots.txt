@@ -1,0 +1,8 @@
+# robots.txt for MySOMClasses
+# Allow all search engines to crawl the site
+
+User-agent: *
+Allow: /
+
+# Sitemap location
+Sitemap: https://mysomclasses.com/sitemap.xml

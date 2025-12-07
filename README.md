@@ -10,7 +10,20 @@ Yale SOM Course Picker is a scheduling tool for browsing and organizing courses 
 - Fetch course information from the SOM course API
 - Filter by semester and program
 - Add courses to a personal schedule view
+- Export schedules to ICS format for calendar apps
+- Share schedules with friends via URL
 - Track usage anonymously via Vercel Web Analytics
+- **SEO Optimized**: Structured data, sitemap, robots.txt, and rich metadata for search engines
+
+## SEO & Search Optimization
+
+This application includes comprehensive SEO optimizations following Google's best practices:
+
+- **Course Structured Data**: JSON-LD markup following [Google's Course guidelines](https://developers.google.com/search/docs/appearance/structured-data/course)
+- **Dynamic Sitemap**: Auto-generated sitemap.xml for search engines
+- **Robots.txt**: Proper crawling directives
+- **Rich Metadata**: OpenGraph and Twitter Card support
+- **Schema.org Markup**: EducationalOrganization, WebSite, and Course types
 
 ## Getting Started
 
