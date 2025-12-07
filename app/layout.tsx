@@ -51,20 +51,11 @@ export const metadata: Metadata = {
     siteName: 'MySOMClasses',
     title: 'MySOMClasses - Yale SOM Course Picker & Schedule Planner',
     description: 'Browse, filter, and schedule courses at Yale School of Management. Interactive calendar view, course search, export to ICS, and share your schedule.',
-    images: [
-      {
-        url: 'https://mysomclasses.com/og-image.png',
-        width: 1200,
-        height: 630,
-        alt: 'MySOMClasses - Yale SOM Course Picker',
-      },
-    ],
   },
   twitter: {
-    card: 'summary_large_image',
+    card: 'summary',
     title: 'MySOMClasses - Yale SOM Course Picker',
     description: 'Browse, filter, and schedule courses at Yale School of Management.',
-    images: ['https://mysomclasses.com/og-image.png'],
   },
   alternates: {
     canonical: 'https://mysomclasses.com',
