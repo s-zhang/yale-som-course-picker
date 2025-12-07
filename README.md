@@ -25,8 +25,6 @@ This application includes comprehensive SEO optimizations following Google's bes
 - **Rich Metadata**: OpenGraph and Twitter Card support
 - **Schema.org Markup**: EducationalOrganization, WebSite, and Course types
 
-See [docs/SEO.md](docs/SEO.md) for detailed documentation.
-
 ## Getting Started
 
 Install dependencies and start the development server:
