@@ -17,7 +17,7 @@ import { generateICS } from "@/lib/ics"
 import { capitalize, getTargetViewMode, hasValidMeetingTime } from "@/lib/utils"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import { StructuredData } from "@/components/structured-data"
-import { generateCoursesListStructuredData } from "@/lib/structured-data"
+import { generateCoursesListStructuredData, generateWebSiteStructuredData, generateOrganizationStructuredData } from "@/lib/structured-data"
 
 interface Instructor {
   name: string
@@ -945,10 +945,17 @@ export default function SOMCourse() {
       courseSession: course.courseSession,
       courseSessionStartDate: course.courseSessionStartDate,
       courseSessionEndDate: course.courseSessionEndDate,
+      daysTimes: course.daysTimes,
+      room: course.room,
+      syllabusUrl: course.syllabusUrl,
     }))
     
     return generateCoursesListStructuredData(coursesForStructuredData)
   }, [filteredCourses])
+
+  // Generate WebSite and Organization structured data
+  const websiteStructuredData = React.useMemo(() => generateWebSiteStructuredData(), [])
+  const organizationStructuredData = React.useMemo(() => generateOrganizationStructuredData(), [])
 
   // Update query parameters when filters or schedule change
   useEffect(() => {
@@ -1090,6 +1097,8 @@ export default function SOMCourse() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      <StructuredData data={websiteStructuredData} />
+      <StructuredData data={organizationStructuredData} />
       {structuredData && <StructuredData data={structuredData} />}
       <header className="bg-white border-b border-gray-200 px-6 py-4">
         <div className="flex items-center justify-between">
