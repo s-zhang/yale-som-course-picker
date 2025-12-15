@@ -29,16 +29,16 @@ This application includes comprehensive SEO optimizations following Google's bes
 
 Install dependencies and start the development server:
 
-\`\`\`bash
+```bash
 pnpm install
 pnpm dev
-\`\`\`
+```
 
 To create a production build:
 
-\`\`\`bash
+```bash
 pnpm build
-\`\`\`
+```
 
 ## Deployment
 
