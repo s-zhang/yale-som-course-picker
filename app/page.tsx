@@ -435,6 +435,12 @@ const SessionMultiSelectFilter = ({
   }
 
   const selectedCount = selected.filter((item) => allOptions.includes(item)).length
+  const optionLabelMap = new Map(
+    groups.flatMap((group) => group.children.map((child) => [child.id, child.label] as const))
+  )
+  const selectedLabels = selected
+    .filter((item) => allOptions.includes(item))
+    .map((item) => optionLabelMap.get(item) ?? item)
 
   return (
     <Popover>
@@ -444,7 +450,7 @@ const SessionMultiSelectFilter = ({
           className="w-full sm:w-40 justify-between text-left font-normal bg-transparent"
         >
           <span className="truncate">
-            {selectedCount === 0 ? placeholder : selectedCount === 1 ? "1 selected" : `${selectedCount} selected`}
+            {selectedCount === 0 ? placeholder : selectedLabels.join(", ")}
           </span>
           <ChevronDown className="ml-2 h-4 w-4 shrink-0" />
         </Button>
