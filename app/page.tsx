@@ -684,7 +684,7 @@ export default function SOMCourse() {
     const pc = searchParams.get("programs")
     if (pc) setSelectedProgramCohorts(pc.split(",").filter(Boolean))
     if (!hasParams) {
-      setSelectedProgramCohorts(["Elective"])
+      setSelectedProgramCohorts([])
     }
     const search = searchParams.get("search")
     if (search) setSearchTerm(search)
