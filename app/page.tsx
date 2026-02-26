@@ -462,31 +462,28 @@ const getProgramCohortBadgeClass = (color: string): string => {
   return colorMap[color.toLowerCase()] || "bg-gray-500 hover:bg-gray-500 text-white border-0"
 }
 
-const getCurrentAndNextSemesters = (): string[] => {
+const getCandidateSemesters = (): string[] => {
   const now = new Date()
   const currentYear = now.getFullYear()
   const month = now.getMonth() + 1 // getMonth() returns 0-11
   const day = now.getDate()
 
-  let currentSemesterCode: string
   let semesters: string[] = []
 
   // Determine current semester based on date
   if ((month === 5 && day >= 16) || (month > 5 && month < 12) || (month === 12 && day <= 15)) {
     // May 16 - Dec 15: Current is Fall semester
-    currentSemesterCode = `${currentYear}03`
     semesters = [
-      currentSemesterCode,
-      `${currentYear + 1}01`, // Next spring
-      `${currentYear + 1}03`, // Next fall
+      `${currentYear + 1}01`, // Next spring (latest)
+      `${currentYear}03`, // Current fall
+      `${currentYear}01`, // Previous spring
     ]
   } else {
     // Dec 16 - May 15: Current is Spring semester
-    currentSemesterCode = `${currentYear}01`
     semesters = [
-      currentSemesterCode,
-      `${currentYear}03`, // Next fall
-      `${currentYear + 1}01`, // Next spring
+      `${currentYear}03`, // Next fall (latest)
+      `${currentYear}01`, // Current spring
+      `${currentYear - 1}03`, // Previous fall
     ]
   }
 
@@ -703,7 +700,7 @@ export default function SOMCourse() {
   const fetchCourses = async () => {
     try {
       setLoading(true)
-      const semesterCodes = getCurrentAndNextSemesters()
+      const semesterCodes = getCandidateSemesters()
       const response = await fetch(`/api/courses?semesters=${semesterCodes.join(",")}`)
       const data = await response.json()
       const processedCourses = (data.courses || []).map(processCourseData)

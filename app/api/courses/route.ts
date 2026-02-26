@@ -11,8 +11,9 @@ export async function GET(request: Request) {
 
     const semesterCodes = semestersParam.split(",")
     const allCourses: any[] = []
+    let semestersWithCourses = 0
 
-    // Fetch courses from all semester codes
+    // Fetch courses from newest to oldest and stop after two non-empty semesters
     for (const semesterCode of semesterCodes) {
       try {
         console.log(`Fetching courses for semester: ${semesterCode}`)
@@ -30,7 +31,14 @@ export async function GET(request: Request) {
           const data = await response.json()
           const courses = data.data?.items || []
           console.log(`Found ${courses.length} courses for semester ${semesterCode}`)
-          allCourses.push(...courses)
+          if (courses.length > 0) {
+            allCourses.push(...courses)
+            semestersWithCourses += 1
+
+            if (semestersWithCourses >= 2) {
+              break
+            }
+          }
         } else {
           console.warn(`Failed to fetch courses for semester ${semesterCode}: ${response.status}`)
         }
