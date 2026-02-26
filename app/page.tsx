@@ -143,6 +143,21 @@ const SESSION_FORMAT_MAP: Record<string, { term: "Fall" | "Spring"; label: strin
   "Spring-2": { term: "Spring", label: "Spring 2" },
 }
 
+
+const SESSION_CHILD_ORDER: Record<string, number> = {
+  "Spring-1": 0,
+  "Spring-2": 1,
+  Spring: 2,
+  "Fall-1": 0,
+  "Fall-2": 1,
+  Fall: 2,
+}
+
+const TERM_ORDER: Record<string, number> = {
+  Spring: 0,
+  Fall: 1,
+}
+
 const getSessionYear = (course: Course): number | null => {
   if (course.courseSessionStartDate) {
     const parsedDate = new Date(course.courseSessionStartDate)
@@ -773,14 +788,29 @@ export default function SOMCourse() {
     const grouped = Array.from(groupedSessions.entries())
       .map(([termYear, children]) => {
         const [term, year] = termYear.split("-")
-        const sortedChildren = [...children].sort((a, b) => a.label.localeCompare(b.label))
+        const sortedChildren = [...children].sort((a, b) => {
+          const [, rawA = ""] = a.id.split(":")
+          const [, rawB = ""] = b.id.split(":")
+          const rankA = SESSION_CHILD_ORDER[rawA] ?? Number.MAX_SAFE_INTEGER
+          const rankB = SESSION_CHILD_ORDER[rawB] ?? Number.MAX_SAFE_INTEGER
+
+          if (rankA !== rankB) return rankA - rankB
+          return a.label.localeCompare(b.label)
+        })
         return {
           id: termYear,
           label: `${term} ${year}`,
           children: sortedChildren,
         }
       })
-      .sort((a, b) => b.id.localeCompare(a.id))
+      .sort((a, b) => {
+        const [termA, yearA] = a.id.split("-")
+        const [termB, yearB] = b.id.split("-")
+        const yearDiff = Number(yearA) - Number(yearB)
+
+        if (yearDiff !== 0) return yearDiff
+        return (TERM_ORDER[termA] ?? Number.MAX_SAFE_INTEGER) - (TERM_ORDER[termB] ?? Number.MAX_SAFE_INTEGER)
+      })
 
     if (otherSessions.size > 0) {
       grouped.push({
