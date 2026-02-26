@@ -68,6 +68,17 @@ interface ScheduledCourse extends Course {
   color: string
 }
 
+interface SessionFilterGroup {
+  id: string
+  label: string
+  children: SessionFilterOption[]
+}
+
+interface SessionFilterOption {
+  id: string
+  label: string
+}
+
 const COLORS = [
   "bg-blue-500",
   "bg-green-500",
@@ -122,6 +133,40 @@ const DEFAULT_TIME_SLOTS = [
 ]
 
 const TIME_SLOT_HEIGHT = 40 // px per 30 minute slot
+
+const SESSION_FORMAT_MAP: Record<string, { term: "Fall" | "Spring"; label: string }> = {
+  Fall: { term: "Fall", label: "Full session fall" },
+  "Fall-1": { term: "Fall", label: "Fall 1" },
+  "Fall-2": { term: "Fall", label: "Fall 2" },
+  Spring: { term: "Spring", label: "Full session spring" },
+  "Spring-1": { term: "Spring", label: "Spring 1" },
+  "Spring-2": { term: "Spring", label: "Spring 2" },
+}
+
+const getSessionYear = (course: Course): number | null => {
+  if (course.courseSessionStartDate) {
+    const parsedDate = new Date(course.courseSessionStartDate)
+    if (!Number.isNaN(parsedDate.getTime())) {
+      return parsedDate.getFullYear()
+    }
+  }
+
+  const termCodeYear = course.termCode?.match(/^(\d{4})/)
+  return termCodeYear ? Number(termCodeYear[1]) : null
+}
+
+const getCourseSessionFilterId = (course: Course): string | null => {
+  const rawSession = course.courseSession?.trim()
+  if (!rawSession) return null
+
+  const normalized = SESSION_FORMAT_MAP[rawSession]
+  if (!normalized) {
+    return `other:${rawSession}`
+  }
+
+  const year = getSessionYear(course)
+  return year ? `${normalized.term}-${year}:${rawSession}` : `other:${rawSession}`
+}
 
 const parseTimeToMinutes = (time: string): number => {
   const [timeStr, period] = time.split(" ")
@@ -344,6 +389,111 @@ const MultiSelectFilter = ({
               </label>
             </div>
           ))}
+        </div>
+      </PopoverContent>
+    </Popover>
+  )
+}
+
+const SessionMultiSelectFilter = ({
+  groups,
+  selected,
+  onSelectionChange,
+  placeholder,
+  label,
+}: {
+  groups: SessionFilterGroup[]
+  selected: string[]
+  onSelectionChange: (selected: string[]) => void
+  placeholder: string
+  label: string
+}) => {
+  const allOptions = groups.flatMap((group) => group.children.map((child) => child.id))
+
+  const clearAll = () => {
+    onSelectionChange([])
+  }
+
+  const toggleParent = (group: SessionFilterGroup) => {
+    const childIds = group.children.map((child) => child.id)
+    const allChildrenSelected = childIds.every((id) => selected.includes(id))
+
+    if (allChildrenSelected) {
+      onSelectionChange(selected.filter((id) => !childIds.includes(id)))
+      return
+    }
+
+    onSelectionChange(Array.from(new Set([...selected, ...childIds])))
+  }
+
+  const toggleChild = (childId: string) => {
+    if (selected.includes(childId)) {
+      onSelectionChange(selected.filter((id) => id !== childId))
+    } else {
+      onSelectionChange([...selected, childId])
+    }
+  }
+
+  const selectedCount = selected.filter((item) => allOptions.includes(item)).length
+
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <Button
+          variant="outline"
+          className="w-full sm:w-40 justify-between text-left font-normal bg-transparent"
+        >
+          <span className="truncate">
+            {selectedCount === 0 ? placeholder : selectedCount === 1 ? "1 selected" : `${selectedCount} selected`}
+          </span>
+          <ChevronDown className="ml-2 h-4 w-4 shrink-0" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-72 p-0" align="start">
+        <div className="p-3 border-b">
+          <div className="flex items-center justify-between">
+            <span className="font-medium text-sm">{label}</span>
+            {selectedCount > 0 && (
+              <Button variant="ghost" size="sm" onClick={clearAll} className="h-6 px-2 text-xs">
+                Clear
+              </Button>
+            )}
+          </div>
+        </div>
+        <div className="max-h-72 overflow-y-auto p-2">
+          {groups.map((group) => {
+            const childIds = group.children.map((child) => child.id)
+            const allChildrenSelected = childIds.length > 0 && childIds.every((id) => selected.includes(id))
+
+            return (
+              <div key={group.id} className="mb-2">
+                <div className="flex items-center space-x-2 px-2 py-1.5 rounded hover:bg-gray-50">
+                  <Checkbox
+                    id={group.id}
+                    checked={allChildrenSelected}
+                    onCheckedChange={() => toggleParent(group)}
+                  />
+                  <label htmlFor={group.id} className="text-sm font-medium cursor-pointer flex-1">
+                    {group.label}
+                  </label>
+                </div>
+                <div className="ml-7">
+                  {group.children.map((child) => (
+                    <div key={child.id} className="flex items-center space-x-2 px-2 py-1.5 rounded hover:bg-gray-50">
+                      <Checkbox
+                        id={child.id}
+                        checked={selected.includes(child.id)}
+                        onCheckedChange={() => toggleChild(child.id)}
+                      />
+                      <label htmlFor={child.id} className="text-sm cursor-pointer flex-1 truncate">
+                        {child.label}
+                      </label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )
+          })}
         </div>
       </PopoverContent>
     </Popover>
@@ -583,12 +733,60 @@ export default function SOMCourse() {
     return Array.from(categorySet).sort()
   }, [courses])
 
-  const sessions = React.useMemo(() => {
-    const sessionSet = new Set<string>()
+  const sessionFilterGroups = React.useMemo(() => {
+    const groupedSessions = new Map<string, SessionFilterOption[]>()
+    const otherSessions = new Set<string>()
+
     courses.forEach((course) => {
-      if (course.courseSession) sessionSet.add(course.courseSession)
+      const rawSession = course.courseSession?.trim()
+      if (!rawSession) return
+
+      const normalized = SESSION_FORMAT_MAP[rawSession]
+      const filterId = getCourseSessionFilterId(course)
+      if (!normalized || !filterId) {
+        otherSessions.add(rawSession)
+        return
+      }
+
+      if (!filterId.startsWith("other:")) {
+        const [termYear] = filterId.split(":")
+        if (!groupedSessions.has(termYear)) {
+          groupedSessions.set(termYear, [])
+        }
+        const existing = groupedSessions.get(termYear) ?? []
+        if (!existing.some((session) => session.id === filterId)) {
+          existing.push({ id: filterId, label: normalized.label })
+          groupedSessions.set(termYear, existing)
+        }
+        return
+      }
+
+      otherSessions.add(rawSession)
     })
-    return Array.from(sessionSet).sort()
+
+    const grouped = Array.from(groupedSessions.entries())
+      .map(([termYear, children]) => {
+        const [term, year] = termYear.split("-")
+        const sortedChildren = [...children].sort((a, b) => a.label.localeCompare(b.label))
+        return {
+          id: termYear,
+          label: `${term} ${year}`,
+          children: sortedChildren,
+        }
+      })
+      .sort((a, b) => b.id.localeCompare(a.id))
+
+    if (otherSessions.size > 0) {
+      grouped.push({
+        id: "Other",
+        label: "Other",
+        children: Array.from(otherSessions)
+          .sort((a, b) => a.localeCompare(b))
+          .map((session) => ({ id: `other:${session}`, label: session })),
+      })
+    }
+
+    return grouped
   }, [courses])
 
   const instructors = React.useMemo(() => {
@@ -676,7 +874,13 @@ export default function SOMCourse() {
     const cats = searchParams.get("categories")
     if (cats) setSelectedCategories(cats.split(",").filter(Boolean))
     const sess = searchParams.get("sessions")
-    if (sess) setSelectedSessions(sess.split(",").filter(Boolean).map(capitalize))
+    if (sess) {
+      const parsedSessions = sess
+        .split(",")
+        .filter(Boolean)
+        .map((session) => (session.includes(":") ? session : capitalize(session)))
+      setSelectedSessions(parsedSessions)
+    }
     const instr = searchParams.get("instructors")
     if (instr) setSelectedInstructors(instr.split(",").filter(Boolean))
     const unitsParam = searchParams.get("units")
@@ -814,7 +1018,12 @@ export default function SOMCourse() {
         (course.courseCategories || []).some((cat) => (cat || "").toLowerCase().includes(lowerSearch)) ||
         (course.instructors || []).some((instructor) => (instructor.name || "").toLowerCase().includes(lowerSearch))) &&
       (selectedCategories.length === 0 || (course.courseCategories || []).some((cat) => selectedCategories.includes(cat))) &&
-      (selectedSessions.length === 0 || selectedSessions.includes(course.courseSession)) &&
+      (selectedSessions.length === 0 || (() => {
+        const sessionFilterId = getCourseSessionFilterId(course)
+        return sessionFilterId
+          ? selectedSessions.includes(sessionFilterId) || selectedSessions.includes(course.courseSession)
+          : false
+      })()) &&
       (selectedInstructors.length === 0 ||
         (course.instructors || []).some((instructor) => selectedInstructors.includes(instructor.name))) &&
       (selectedUnits.length === 0 || selectedUnits.includes(course.units)) &&
@@ -1363,8 +1572,8 @@ export default function SOMCourse() {
                   placeholder="Categories"
                   label="Categories"
                 />
-                <MultiSelectFilter
-                  options={sessions}
+                <SessionMultiSelectFilter
+                  groups={sessionFilterGroups}
                   selected={selectedSessions}
                   onSelectionChange={setSelectedSessions}
                   placeholder="Sessions"
